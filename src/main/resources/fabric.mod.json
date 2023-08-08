@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "name": "${mod_name}",
+  "version": "${mod_version}",
+  "description": "${mod_description}",
+  "authors": ["${mod_author}"],
+
+  "contact": {
+    "homepage": "${mod_sources}",
+    "sources": "${mod_sources}",
+    "issues": "${mod_sources}"
+  },
+  "license": "${mod_license}",
+  "icon": "assets/example/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "me.gravityio.example.ExampleMod"
+    ]
+  },
+  "mixins": [
+    "example.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=17"
+  }
+}
