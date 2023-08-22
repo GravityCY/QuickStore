@@ -9,6 +9,9 @@ group = "me.gravityio"
 project.dependencies.add("minecraft", "com.mojang:minecraft:${project.minecraft_version}")
 project.dependencies.add("mappings", "net.fabricmc:yarn:${project.project.yarn_version}:v2")
 project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${project.loader_version}")
+// Optional
+// project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
+
 
 repositories {}
 dependencies {}
