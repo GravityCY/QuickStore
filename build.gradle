@@ -1,3 +1,5 @@
+import java.util.regex.Pattern
+
 plugins {
     id "fabric-loom" version "1.3-SNAPSHOT"
     id "maven-publish"
@@ -11,7 +13,6 @@ project.dependencies.add("mappings", "net.fabricmc:yarn:${project.project.yarn_v
 project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${project.loader_version}")
 // Optional
 // project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
-
 
 repositories {}
 dependencies {}
