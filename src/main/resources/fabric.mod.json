@@ -12,16 +12,16 @@
     "issues": "${mod_sources}"
   },
   "license": "${mod_license}",
-  "icon": "assets/example/icon.png",
+  "icon": "assets/quickstore/icon.png",
 
   "environment": "*",
   "entrypoints": {
-    "main": [
-      "me.gravityio.example.ExampleMod"
+    "client": [
+      "me.gravityio.quickstore.QuickStoreMod"
     ]
   },
   "mixins": [
-    "example.mixins.json"
+    "quickstore.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
