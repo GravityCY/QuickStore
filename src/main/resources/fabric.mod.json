@@ -14,7 +14,7 @@
   "license": "${mod_license}",
   "icon": "assets/quickstore/icon.png",
 
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
     "client": [
       "me.gravityio.quickstore.QuickStoreMod"
