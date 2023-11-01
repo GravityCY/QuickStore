@@ -24,8 +24,9 @@
     "quickstore.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=${loader_version}",
-    "minecraft": "${minecraft_version}",
+    "fabricloader": "*",
+    "fabric": "*",
+    "minecraft": "~${minecraft_version}",
     "java": ">=17"
   }
 }
