@@ -161,14 +161,17 @@ public class ItemIO implements ClientModInitializer {
             client.world.addParticle(ParticleTypes.GLOW, this.blockPos.x, this.blockPos.y, this.blockPos.z, 0, 0, 0);
 
             if (this.increment) {
+                DEBUG("Incrementing hotbar slot");
                 client.player.getInventory().scrollInHotbar(-1);
             }
 
             if (this.restock) {
-                int foundId = ScreenHandlerHelper.getSlotID(this.stack, handler, ScreenHandlerHelper.InventoryType.TOP, ItemStack::canCombine);
+                DEBUG("Restocking selected slot");
+                int foundId = ScreenHandlerHelper.findSlotID(this.stack, client.player.playerScreenHandler, ScreenHandlerHelper.InventoryType.BOTTOM, ItemStack::canCombine);
+                DEBUG("Found item ID: {}", foundId);
                 if (foundId != -1) {
-                    var outputId = ScreenHandlerHelper.getSlotID(this.slot, handler, client.player.getInventory());
-                    ScreenHandlerHelper.splitStack(handler, client.interactionManager, client.player, foundId, outputId, this.stack.getCount());
+                    var outputId = ScreenHandlerHelper.findSlotID(this.slot, client.player.playerScreenHandler, client.player.getInventory());
+                    ScreenHandlerHelper.splitStack(client.player.playerScreenHandler, client.interactionManager, client.player, foundId, outputId, this.stack.getCount());
                 }
             }
 

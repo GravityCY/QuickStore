@@ -97,7 +97,7 @@ public class ScreenHandlerHelper {
         return -1;
     }
 
-    public static int getSlotID(int slotIndex, ScreenHandler handler, Inventory inventory) {
+    public static int findSlotID(int slotIndex, ScreenHandler handler, Inventory inventory) {
         for (Slot slot : handler.slots) {
             if (slot.inventory == inventory && slot.getIndex() == slotIndex) {
                 return slot.id;
@@ -106,11 +106,11 @@ public class ScreenHandlerHelper {
         return -1;
     }
 
-    public static int getSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type) {
-        return getSlotID(searchStack, handler, type, ItemStack::areEqual);
+    public static int findSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type) {
+        return findSlotID(searchStack, handler, type, ItemStack::areEqual);
     }
 
-    public static int getSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type, BiPredicate<ItemStack, ItemStack> equalPredicate) {
+    public static int findSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type, BiPredicate<ItemStack, ItemStack> equalPredicate) {
         List<Slot> slots = new ArrayList<>();
         if (type == InventoryType.TOP) {
             slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
