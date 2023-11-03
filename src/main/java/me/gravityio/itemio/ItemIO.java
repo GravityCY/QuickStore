@@ -170,7 +170,7 @@ public class ItemIO implements ClientModInitializer {
                 int foundId = ScreenHandlerHelper.findSlotID(this.stack, client.player.playerScreenHandler, ScreenHandlerHelper.InventoryType.BOTTOM, ItemStack::canCombine);
                 DEBUG("Found item ID: {}", foundId);
                 if (foundId != -1) {
-                    var outputId = ScreenHandlerHelper.findSlotID(this.slot, client.player.playerScreenHandler, client.player.getInventory());
+                    int outputId = ScreenHandlerHelper.findSlotID(this.slot, client.player.playerScreenHandler, client.player.getInventory());
                     ScreenHandlerHelper.splitStack(client.player.playerScreenHandler, client.interactionManager, client.player, foundId, outputId, this.stack.getCount());
                 }
             }
