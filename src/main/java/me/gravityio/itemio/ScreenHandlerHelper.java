@@ -1,6 +1,9 @@
-package me.gravityio.quickstore;
+package me.gravityio.itemio;
 
+import net.minecraft.client.network.ClientPlayerInteractionManager;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
@@ -88,13 +91,17 @@ public class ScreenHandlerHelper {
         }
 
         for (Slot slot : slots) {
-            if (slot.getStack().isEmpty() || !isOutputSlot(slot)) continue;
-            return slot.id;
-        }
-
-        for (Slot slot : slots) {
             if (slot.getStack().isEmpty()) continue;
             return slot.id;
+        }
+        return -1;
+    }
+
+    public static int getSlotID(int slotIndex, ScreenHandler handler, Inventory inventory) {
+        for (Slot slot : handler.slots) {
+            if (slot.inventory == inventory && slot.getIndex() == slotIndex) {
+                return slot.id;
+            }
         }
         return -1;
     }
@@ -117,6 +124,90 @@ public class ScreenHandlerHelper {
         }
         return -1;
     }
+
+    public static void splitStack(ScreenHandler handler, ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int outputSlotId, int newSize) {
+        int count = handler.getSlot(splitSlotId).getStack().getCount();
+        if (count < newSize) return;
+
+        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        if (newSize > 32) {
+            int distance = count - newSize;
+            for (int i = 0; i < distance; i++) {
+                Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+            }
+            Helper.leftClickSlot(manager, player, handler.syncId, outputSlotId);
+
+        } else {
+            for (int i = 0; i < newSize; i++) {
+                Helper.rightClickSlot(manager, player, handler.syncId, outputSlotId);
+            }
+            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+
+        }
+
+    }
+
+    //    public static void splitStack(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int outputSlotId, int newSize) {
+//        var stack = player.playerScreenHandler.getSlot(splitSlotId).getStack();
+//        int count = stack.getCount();
+//
+//        var splitSteps = stepsToTarget(count, newSize);
+//
+//        QuickStoreMod.DEBUG("Times to split into target of {} is {}: ", newSize, splitSteps);
+//
+//        if (splitSteps < newSize) {
+//            Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
+//            Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
+//            for (int i = 0; i < splitSteps - 1; i++) {
+//                Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
+//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
+//            }
+//            var manual = newSize - split(count, splitSteps);
+//            QuickStoreMod.DEBUG("Now manually clicking {} times", manual);
+//            if (manual > 0) {
+//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
+//                for (int i = 0; i < manual; i++) {
+//                    Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
+//                }
+//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
+//            } else {
+//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
+//                for (int i = 0; i > manual; i--) {
+//                    Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
+//                }
+//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
+//            }
+//
+//        } else {
+//            Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
+//            for (int i = 0; i < newSize; i++) {
+//                Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
+//            }
+//        }
+//    }
+//    private static int split(int num, int times) {
+//        for (int i = 0; i < times; i++) {
+//            num = num / 2;
+//        }
+//        return num;
+//    }
+//
+//    private static int stepsToTarget(int count, int target) {
+//        int steps = 0;
+//        int distance = 100000; // 9
+//
+//        while (true) {
+//            count = (count + 1) / 2;
+//            var temp = Math.abs(target - count);
+//            if (temp < distance) {
+//                distance = temp;
+//            } else {
+//                return steps;
+//            }
+//            steps++;
+//        }
+//    }
+
 
     public enum InventoryType {
         BOTTOM, TOP

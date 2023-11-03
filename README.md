@@ -1,4 +1,4 @@
-# QuickStore
+# ItemIO
 A Fabric mod to allow for easy storing / extracting out of inventories 
 without needing to open their inventories.
 
@@ -11,5 +11,4 @@ Have an empty hand, click the keybind, and it will pull an item out of the
 inventory you're looking at! (*tries to prioritize output slots, like the furnace's output slot*)
 
 ### Optional
-
 Hold a modifier keybind (*default:`Left Shift`*) so that you also scroll up in your hotbar after you `store` or `extract`.

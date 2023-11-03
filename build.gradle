@@ -1,7 +1,6 @@
-import java.util.regex.Pattern
 
 plugins {
-    id "fabric-loom" version "1.3-SNAPSHOT"
+    id "fabric-loom" version "1.4-SNAPSHOT"
     id "maven-publish"
 }
 

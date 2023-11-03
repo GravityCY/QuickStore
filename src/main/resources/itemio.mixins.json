@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "me.gravityio.quickstore.mixins.impl",
+  "package": "me.gravityio.itemio.mixins.impl",
   "compatibilityLevel": "JAVA_17",
   "client": [
     "ClientWorldMixin",

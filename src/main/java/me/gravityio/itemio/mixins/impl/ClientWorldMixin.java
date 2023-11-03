@@ -1,6 +1,6 @@
-package me.gravityio.quickstore.mixins.impl;
+package me.gravityio.itemio.mixins.impl;
 
-import me.gravityio.quickstore.ModEvents;
+import me.gravityio.itemio.ModEvents;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.entry.RegistryEntry;

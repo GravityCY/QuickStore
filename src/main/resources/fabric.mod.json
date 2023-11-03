@@ -11,17 +11,18 @@
     "sources": "${mod_sources}",
     "issues": "${mod_sources}"
   },
+
   "license": "${mod_license}",
-  "icon": "assets/quickstore/icon.png",
+  "icon": "assets/itemio/icon.png",
 
   "environment": "client",
   "entrypoints": {
     "client": [
-      "me.gravityio.quickstore.QuickStoreMod"
+      "me.gravityio.itemio.ItemIO"
     ]
   },
   "mixins": [
-    "quickstore.mixins.json"
+    "itemio.mixins.json"
   ],
   "depends": {
     "fabricloader": "*",

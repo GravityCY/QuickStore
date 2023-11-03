@@ -1,6 +1,6 @@
-package me.gravityio.quickstore.mixins.impl;
+package me.gravityio.itemio.mixins.impl;
 
-import me.gravityio.quickstore.ModEvents;
+import me.gravityio.itemio.ModEvents;
 import net.minecraft.screen.ScreenHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

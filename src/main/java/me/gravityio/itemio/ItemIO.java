@@ -1,4 +1,4 @@
-package me.gravityio.quickstore;
+package me.gravityio.itemio;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -11,8 +11,8 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -25,13 +25,15 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class QuickStoreMod implements ClientModInitializer {
+public class ItemIO implements ClientModInitializer {
     public static final String MOD_ID = "quickstore";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final KeyBinding STORE = new KeyBinding("key.quickstore.store", GLFW.GLFW_KEY_V, "category.quickstore.name");
     private static final KeyBinding INCREMENT = new KeyBinding("key.quickstore.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.quickstore.name");
+    private static final KeyBinding RESTOCK = new KeyBinding("key.quickstore.restock", GLFW.GLFW_KEY_LEFT_ALT, "category.quickstore.name");
+    private static final KeyBinding DEBUG = new KeyBinding("key.quickstore.debug", GLFW.GLFW_KEY_O, "category.quickstore.name");
     public static boolean IS_DEBUG;
-    public static QuickStoreMod INSTANCE;
+    public static ItemIO INSTANCE;
     public boolean waiting = false;
     public int slot = -1;
     public ItemStack stack = ItemStack.EMPTY;
@@ -39,6 +41,8 @@ public class QuickStoreMod implements ClientModInitializer {
     public long startTime = -1;
     private boolean canSneak = true;
     private boolean increment = false;
+    private boolean restock = false;
+    private Vec3d blockPos;
 
 
     public static void DEBUG(String message, Object...args) {
@@ -56,6 +60,8 @@ public class QuickStoreMod implements ClientModInitializer {
 
         KeyBindingHelper.registerKeyBinding(STORE);
         KeyBindingHelper.registerKeyBinding(INCREMENT);
+        KeyBindingHelper.registerKeyBinding(RESTOCK);
+        KeyBindingHelper.registerKeyBinding(DEBUG);
 
         var client = MinecraftClient.getInstance();
 
@@ -75,11 +81,13 @@ public class QuickStoreMod implements ClientModInitializer {
             var blockEntity = client.world.getBlockEntity(blockPos);
             if (!(blockEntity instanceof Inventory)) return;
             this.interactBox = Box.of(blockPos.toCenterPos(), 3, 3, 3);
-            this.stack = client.player.getMainHandStack();
+            this.blockPos = blockHit.getBlockPos().toCenterPos().offset(blockHit.getSide().getOpposite(), -0.75f);
+            this.stack = client.player.getMainHandStack().copy();
             this.startTime = System.currentTimeMillis();
             this.waiting = true;
             this.canSneak = true;
             this.increment = InputUtil.isKeyPressed(client.getWindow().getHandle(), KeyBindingHelper.getBoundKeyOf(INCREMENT).getCode());
+            this.restock = InputUtil.isKeyPressed(client.getWindow().getHandle(), KeyBindingHelper.getBoundKeyOf(RESTOCK).getCode());
             for (ItemStack handItem : client.player.getHandItems()) {
                 if (handItem.isEmpty()) continue;
                 this.canSneak = false;
@@ -115,17 +123,28 @@ public class QuickStoreMod implements ClientModInitializer {
         if (!this.waiting) return;
 
         if (this.stack.isEmpty()) {
-            int fromSlotId = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+            int fromSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+            if (fromSlotId != -1) {
+                DEBUG("Swapping with found Output Slot, ID: {}", fromSlotId);
+            } else {
+                fromSlotId = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+                if (fromSlotId != -1) {
+                    DEBUG("Swapping with found non empty slot, ID: {}", fromSlotId);
+                }
+            }
+
             if (fromSlotId != -1) {
                 int toSlotIndex = client.player.getInventory().selectedSlot;
-                DEBUG("Swapping From Slot, ID: '{}' with To Slot, ID: '{}'", fromSlotId, toSlotIndex);
                 Helper.swapSlot(client.interactionManager, client.player, handler.syncId, fromSlotId, toSlotIndex);
-            } else {
-                DEBUG("Hand is Empty and Couldn't find an Item from Screen Handler to swap with!");
             }
 
         } else {
             int clickSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+            if (clickSlotId != -1) {
+                if (!ItemStack.canCombine(handler.slots.get(clickSlotId).getStack(), this.stack))
+                    clickSlotId = -1;
+            }
+
             if (clickSlotId != -1) {
                 DEBUG("Quick Moving from found Output Slot, ID: {}", clickSlotId);
             } else {
@@ -133,16 +152,28 @@ public class QuickStoreMod implements ClientModInitializer {
                 DEBUG("Quick Moving from found Selected Slot, ID: {}", clickSlotId);
             }
 
-            Helper.quickMoveSlot(client.interactionManager, client.player, handler.syncId, clickSlotId);
+            Helper.shiftClickSlot(client.interactionManager, client.player, handler.syncId, clickSlotId);
         }
 
+        client.player.closeHandledScreen();
         if (!ItemStack.areEqual(this.stack, client.player.getMainHandStack())) {
             client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
+            client.world.addParticle(ParticleTypes.GLOW, this.blockPos.x, this.blockPos.y, this.blockPos.z, 0, 0, 0);
+
             if (this.increment) {
-                client.player.getInventory().scrollInHotbar(-1.0);
+                client.player.getInventory().scrollInHotbar(-1);
             }
+
+            if (this.restock) {
+                int foundId = ScreenHandlerHelper.getSlotID(this.stack, handler, ScreenHandlerHelper.InventoryType.TOP, ItemStack::canCombine);
+                if (foundId != -1) {
+                    var outputId = ScreenHandlerHelper.getSlotID(this.slot, handler, client.player.getInventory());
+                    ScreenHandlerHelper.splitStack(handler, client.interactionManager, client.player, foundId, outputId, this.stack.getCount());
+                }
+            }
+
         }
-        client.player.closeHandledScreen();
+
         this.waiting = false;
         this.slot = -1;
         this.stack = null;
