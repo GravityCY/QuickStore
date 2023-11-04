@@ -73,6 +73,7 @@ public class KeybindWrapper {
     public static KeybindWrapper of(String translationKey, int code, String category) {
         return of(translationKey, code, category, null, null);
     }
+
     public static KeybindWrapper of(String translationKey, int code, String category, Runnable onPressed) {
         return of(translationKey, code, category, onPressed, null);
     }

@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * A Keybind manager<br><br>
- *
+ * <p>
  * Needs to be called every tick to update the keybinds
  */
 public class KeybindManager {

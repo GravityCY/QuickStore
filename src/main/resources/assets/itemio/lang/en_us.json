@@ -1,6 +1,6 @@
 {
-  "category.quickstore.name": "Gravitational Keybinds",
-  "key.quickstore.store": "Quick Store",
-  "key.quickstore.increment": "Increment Modifier",
-  "key.quickstore.restock": "Restock Modifier"
+  "category.gravityio.name": "Gravitational Keybinds",
+  "key.quickstore.store": "Store",
+  "key.quickstore.increment": "Increment",
+  "messages.quickstore.far_inventory": "§cSome inventories were too far away!"
 }

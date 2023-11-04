@@ -21,7 +21,8 @@ public class ClientWorldMixin {
             cancellable = true
     )
     private void onPlaySoundCancel(@Nullable PlayerEntity except, double x, double y, double z, RegistryEntry<SoundEvent> sound, SoundCategory category, float volume, float pitch, long seed, CallbackInfo ci) {
-        if (ModEvents.ON_PLAY_SOUND.invoker().onPlaySound(new Vec3d(x, y, z), sound.value(), category, volume, pitch)) return;
+        if (ModEvents.ON_PLAY_SOUND.invoker().onPlaySound(new Vec3d(x, y, z), sound.value(), category, volume, pitch))
+            return;
         ci.cancel();
     }
 }

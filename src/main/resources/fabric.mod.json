@@ -4,17 +4,16 @@
   "name": "${mod_name}",
   "version": "${mod_version}",
   "description": "${mod_description}",
-  "authors": ["${mod_author}"],
-
+  "authors": [
+    "${mod_author}"
+  ],
   "contact": {
     "homepage": "${mod_sources}",
     "sources": "${mod_sources}",
     "issues": "${mod_sources}"
   },
-
   "license": "${mod_license}",
   "icon": "assets/itemio/icon.png",
-
   "environment": "client",
   "entrypoints": {
     "client": [
