@@ -1,8 +1,10 @@
 package me.gravityio.itemio;
 
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
@@ -82,6 +84,21 @@ public class ScreenHandlerHelper {
         return -1;
     }
 
+    private static int getEmptySlotID(ScreenHandler handler, InventoryType type) {
+        List<Slot> slots = new ArrayList<>();
+        if (type == InventoryType.TOP) {
+            slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
+        } else if (type == InventoryType.BOTTOM) {
+            slots = getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
+        }
+
+        for (Slot slot : slots) {
+            if (!slot.getStack().isEmpty()) continue;
+            return slot.id;
+        }
+        return -1;
+    }
+
     public static int getNonEmptySlotID(ScreenHandler handler, InventoryType type) {
         List<Slot> slots = new ArrayList<>();
         if (type == InventoryType.TOP) {
@@ -128,6 +145,11 @@ public class ScreenHandlerHelper {
     public static void splitStack(ScreenHandler handler, ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int outputSlotId, int newSize) {
         int count = handler.getSlot(splitSlotId).getStack().getCount();
         if (count < newSize) return;
+        if (count == newSize) {
+            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.leftClickSlot(manager, player, handler.syncId, outputSlotId);
+            return;
+        }
 
         Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
         if (newSize > 32) {
@@ -144,7 +166,84 @@ public class ScreenHandlerHelper {
             Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
 
         }
+    }
 
+    public static void splitStackShift(ScreenHandler handler, ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
+        int count = handler.getSlot(splitSlotId).getStack().getCount();
+        if (count < newSize) return;
+        if (count == newSize) {
+            Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
+            return;
+        }
+
+        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        for (int i = 0; i < newSize; i++) {
+            Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+        }
+        Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
+        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+
+    }
+
+    public static void splitTypeShiftTest(ScreenHandler handler, ClientPlayerInteractionManager manager, PlayerEntity player, ItemStack splitStack, int newSize) {
+
+    }
+
+    public static int getCountAt(ScreenHandler handler, int slotId) {
+        return handler.getSlot(slotId).getStack().getCount();
+    }
+
+    public static void splitStackShiftTest(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
+        var handler = player.currentScreenHandler;
+        int count = getCountAt(handler, splitSlotId);
+        if (count < newSize) {
+            return;
+        }
+        if (count == newSize) {
+            Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
+            return;
+        }
+
+        int availableSlot = getEmptySlotID(handler, InventoryType.BOTTOM);
+        for (int i = 0; i < 10; i++) {
+            if (shouldSplit(player, splitSlotId, newSize)) {
+                Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+                Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+
+            } else {
+                break;
+            }
+        }
+        count = getCountAt(handler, splitSlotId);
+
+        int distance = count - newSize;
+        if (distance > 0) {
+            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+            for (int i = 0; i < distance; i++) {
+                Helper.rightClickSlot(manager, player, handler.syncId, availableSlot);
+            }
+            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        } else {
+            Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+            for (int i = 0; i > distance; i--) {
+                Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+            }
+            Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+        }
+
+        Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
+        Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+    }
+
+    private static boolean shouldSplit(PlayerEntity player, int clickSlotId, int target) {
+        var stackCount = getCountAt(player.currentScreenHandler, clickSlotId);
+        if (stackCount == target) return false;
+
+        var splitCount = Helper.simulateRightClick(player, clickSlotId).getLeft().getCount();
+        int a = Math.abs(splitCount - target);
+        int b = Math.abs(stackCount - target);
+        return a < b;
     }
 
     //    public static void splitStack(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int outputSlotId, int newSize) {
@@ -185,6 +284,7 @@ public class ScreenHandlerHelper {
 //            }
 //        }
 //    }
+
 //    private static int split(int num, int times) {
 //        for (int i = 0; i < times; i++) {
 //            num = num / 2;
