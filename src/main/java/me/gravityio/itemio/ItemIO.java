@@ -55,8 +55,6 @@ public class ItemIO implements ClientModInitializer {
         LOGGER.info(message, args);
     }
 
-
-
     @Override
     public void onInitializeClient() {
         INSTANCE = this;
@@ -89,11 +87,13 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void whileStorePressed(MinecraftClient client) {
-        if (this.waiting || !Helper.isInventory(client.world, client.crosshairTarget)) {
+        var hit = client.getCameraEntity().raycast(5, 0, false);
+        if (this.waiting || !Helper.isInventory(client.world, hit)) {
             return;
         }
 
-        var blockHit = (BlockHitResult) client.crosshairTarget;
+
+        var blockHit = (BlockHitResult) hit;
         var blockRec = new BlockRec(blockHit.getBlockPos(), blockHit.getSide());
         if (this.blocks.contains(blockRec)) return;
         DEBUG("Adding '{}'", blockHit.getBlockPos().toShortString());
@@ -106,7 +106,8 @@ public class ItemIO implements ClientModInitializer {
         if (this.waiting) {
             return;
         }
-        if (!Helper.isInventory(client.world, client.crosshairTarget) ) {
+        var hit = client.getCameraEntity().raycast(5, 0, false);
+        if (!Helper.isInventory(client.world, hit) ) {
             this.clear();
             return;
         }
@@ -150,33 +151,28 @@ public class ItemIO implements ClientModInitializer {
         if (!this.waiting) return;
 
         var slotId = ScreenHandlerHelper.findSlotID(this.slot, handler, client.player.getInventory());
-        boolean success = false;
-        if (this.stack.isEmpty()) {
-            var clickSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
-            if (clickSlotId == -1) {
-                clickSlotId = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
-            }
-            if (clickSlotId != -1) {
-                Helper.shiftClickSlot(client.interactionManager, client.player, handler.syncId, clickSlotId);
-                success = true;
-            }
+        var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+        if (outputSlotId != -1 && (this.stack.isEmpty() || ItemStack.canCombine(handler.getSlot(outputSlotId).getStack(), this.stack))) {
+            ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
         } else {
-            var clickSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
-            if (clickSlotId != -1 && ItemStack.canCombine(handler.getSlot(clickSlotId).getStack(), this.stack)) {
-                Helper.shiftClickSlot(client.interactionManager, client.player, handler.syncId, clickSlotId);
+            if (this.stack.isEmpty()) {
+                int clickSlotId = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+                if (clickSlotId != -1) {
+                    ScreenHandlerHelper.moveToOrShift(client, clickSlotId, slotId);
+                }
             } else {
                 var split = this.stack.getCount() / this.blocks.size();
                 ScreenHandlerHelper.splitStackShiftTest(client.interactionManager, client.player, slotId, split);
             }
+        }
 
-        }
         client.player.closeHandledScreen();
-        if (success || !ItemStack.areEqual(this.stack, client.player.getMainHandStack())) {
-            client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
-            var pos = this.current.pos().toCenterPos().offset(this.current.side(), 0.75f);
-            client.world.addParticle(ParticleTypes.GLOW, pos.x, pos.y, pos.z, 0, 0, 0);
-        }
         if (!this.sendOpenScreenPacket(client)) {
+            if (!ItemStack.areEqual(this.stack, client.player.getMainHandStack())) {
+                client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
+                var pos = this.current.pos().toCenterPos().offset(this.current.side(), 0.75f);
+                client.world.addParticle(ParticleTypes.GLOW, pos.x, pos.y, pos.z, 0, 0, 0);
+            }
             this.clear();
         }
     }

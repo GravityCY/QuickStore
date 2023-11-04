@@ -1,10 +1,9 @@
 package me.gravityio.itemio;
 
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
@@ -146,24 +145,24 @@ public class ScreenHandlerHelper {
         int count = handler.getSlot(splitSlotId).getStack().getCount();
         if (count < newSize) return;
         if (count == newSize) {
-            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
-            Helper.leftClickSlot(manager, player, handler.syncId, outputSlotId);
+            Helper.leftClickSlot(manager, player, splitSlotId);
+            Helper.leftClickSlot(manager, player, outputSlotId);
             return;
         }
 
-        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        Helper.leftClickSlot(manager, player, splitSlotId);
         if (newSize > 32) {
             int distance = count - newSize;
             for (int i = 0; i < distance; i++) {
-                Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+                Helper.rightClickSlot(manager, player, splitSlotId);
             }
-            Helper.leftClickSlot(manager, player, handler.syncId, outputSlotId);
+            Helper.leftClickSlot(manager, player, outputSlotId);
 
         } else {
             for (int i = 0; i < newSize; i++) {
-                Helper.rightClickSlot(manager, player, handler.syncId, outputSlotId);
+                Helper.rightClickSlot(manager, player, outputSlotId);
             }
-            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.leftClickSlot(manager, player, splitSlotId);
 
         }
     }
@@ -172,16 +171,16 @@ public class ScreenHandlerHelper {
         int count = handler.getSlot(splitSlotId).getStack().getCount();
         if (count < newSize) return;
         if (count == newSize) {
-            Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.shiftClickSlot(manager, player, splitSlotId);
             return;
         }
 
-        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        Helper.leftClickSlot(manager, player, splitSlotId);
         for (int i = 0; i < newSize; i++) {
-            Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.rightClickSlot(manager, player, splitSlotId);
         }
-        Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
-        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        Helper.shiftClickSlot(manager, player, splitSlotId);
+        Helper.leftClickSlot(manager, player, splitSlotId);
 
     }
 
@@ -193,6 +192,23 @@ public class ScreenHandlerHelper {
         return handler.getSlot(slotId).getStack().getCount();
     }
 
+    public static void moveToOrShift(MinecraftClient client, int fromSlotId, int toSlotId) {
+        var handler = client.player.currentScreenHandler;
+        var from = handler.getSlot(fromSlotId).getStack();
+        var to = handler.getSlot(toSlotId).getStack();
+        if (from.isEmpty()) {
+            return;
+        }
+
+        if (to.isEmpty()) {
+            Helper.leftClickSlot(client.interactionManager, client.player, fromSlotId);
+            Helper.leftClickSlot(client.interactionManager, client.player, toSlotId);
+        } else {
+            Helper.shiftClickSlot(client.interactionManager, client.player, fromSlotId);
+        }
+    }
+
+
     public static void splitStackShiftTest(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
         var handler = player.currentScreenHandler;
         int count = getCountAt(handler, splitSlotId);
@@ -200,15 +216,15 @@ public class ScreenHandlerHelper {
             return;
         }
         if (count == newSize) {
-            Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.shiftClickSlot(manager, player, splitSlotId);
             return;
         }
 
         int availableSlot = getEmptySlotID(handler, InventoryType.BOTTOM);
         for (int i = 0; i < 10; i++) {
             if (shouldSplit(player, splitSlotId, newSize)) {
-                Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
-                Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+                Helper.rightClickSlot(manager, player, splitSlotId);
+                Helper.leftClickSlot(manager, player, availableSlot);
 
             } else {
                 break;
@@ -218,22 +234,22 @@ public class ScreenHandlerHelper {
 
         int distance = count - newSize;
         if (distance > 0) {
-            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.leftClickSlot(manager, player, splitSlotId);
             for (int i = 0; i < distance; i++) {
-                Helper.rightClickSlot(manager, player, handler.syncId, availableSlot);
+                Helper.rightClickSlot(manager, player, availableSlot);
             }
-            Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+            Helper.leftClickSlot(manager, player, splitSlotId);
         } else {
-            Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+            Helper.leftClickSlot(manager, player, availableSlot);
             for (int i = 0; i > distance; i--) {
-                Helper.rightClickSlot(manager, player, handler.syncId, splitSlotId);
+                Helper.rightClickSlot(manager, player, splitSlotId);
             }
-            Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
+            Helper.leftClickSlot(manager, player, availableSlot);
         }
 
-        Helper.shiftClickSlot(manager, player, handler.syncId, splitSlotId);
-        Helper.leftClickSlot(manager, player, handler.syncId, availableSlot);
-        Helper.leftClickSlot(manager, player, handler.syncId, splitSlotId);
+        Helper.shiftClickSlot(manager, player, splitSlotId);
+        Helper.leftClickSlot(manager, player, availableSlot);
+        Helper.leftClickSlot(manager, player, splitSlotId);
     }
 
     private static boolean shouldSplit(PlayerEntity player, int clickSlotId, int target) {
