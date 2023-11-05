@@ -76,17 +76,10 @@ public class ItemIO implements ClientModInitializer {
         }
     }
 
-    private void clear() {
-        this.waiting = false;
-        this.increment = false;
-        this.inventoryBlocks.clear();
-        this.inventoryBlockIterator = null;
-        this.currentInventoryBlock = null;
-        this.heldStack = null;
-    }
-
     private void whileStorePressed(MinecraftClient client) {
         var hit = client.getCameraEntity().raycast(5, 0, false);
+        this.removeFarOnesButDontRemoveThem(client.player);
+
         if (this.waiting || !Helper.isInventory(client.world, hit)) {
             return;
         }
@@ -104,6 +97,7 @@ public class ItemIO implements ClientModInitializer {
         if (this.waiting) {
             return;
         }
+
         var hit = client.getCameraEntity().raycast(5, 0, false);
         if (!Helper.isInventory(client.world, hit)) {
             this.clear();
@@ -111,7 +105,6 @@ public class ItemIO implements ClientModInitializer {
         }
 
         this.removeFarOnes(client.player);
-
         this.heldStack = client.player.getMainHandStack().copy();
         this.inventoryBlockIterator = this.inventoryBlocks.iterator();
         this.waiting = true;
@@ -121,8 +114,17 @@ public class ItemIO implements ClientModInitializer {
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
-        this.nextScreenBlock();
+        this.nextInventoryBlock();
         this.sendOpenScreenPacket(client, this.currentInventoryBlock);
+    }
+
+    private void clear() {
+        this.waiting = false;
+        this.increment = false;
+        this.inventoryBlocks.clear();
+        this.inventoryBlockIterator = null;
+        this.currentInventoryBlock = null;
+        this.heldStack = null;
     }
 
     private void removeFarOnes(PlayerEntity player) {
@@ -142,7 +144,15 @@ public class ItemIO implements ClientModInitializer {
         }
     }
 
-    private boolean nextScreenBlock() {
+    private void removeFarOnesButDontRemoveThem(PlayerEntity player) {
+        for (BlockRec blockRec : this.inventoryBlocks) {
+            if (!blockRec.tooFar(player)) continue;
+            var pos = blockRec.getParticlePosition();
+            player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
+        }
+    }
+
+    private boolean nextInventoryBlock() {
         if (!this.inventoryBlockIterator.hasNext()) return false;
         this.currentInventoryBlock = this.inventoryBlockIterator.next();
         return true;
@@ -174,7 +184,7 @@ public class ItemIO implements ClientModInitializer {
         client.player.closeHandledScreen();
         var pos = this.currentInventoryBlock.getParticlePosition();
         client.world.addParticle(STORE_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
-        if (!this.nextScreenBlock()) {
+        if (!this.nextInventoryBlock()) {
             if (!ItemStack.areEqual(this.heldStack, client.player.getMainHandStack())) {
                 client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
             }
