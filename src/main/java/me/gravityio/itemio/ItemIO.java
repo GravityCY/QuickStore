@@ -78,7 +78,7 @@ public class ItemIO implements ClientModInitializer {
 
     private void whileStorePressed(MinecraftClient client) {
         var hit = client.getCameraEntity().raycast(5, 0, false);
-        this.removeFarOnesButDontRemoveThem(client.player);
+        this.showFarInventories(client.player);
 
         if (this.waiting || !Helper.isInventory(client.world, hit)) {
             return;
@@ -132,7 +132,7 @@ public class ItemIO implements ClientModInitializer {
         var hadSomeTooFar = false;
         while (iterator.hasNext()) {
             var blockRec = iterator.next();
-            if (!blockRec.tooFar(player)) continue;
+            if (!blockRec.isTooFar(player)) continue;
             var pos = blockRec.getParticlePosition();
             player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
             DEBUG("Removing '{}'", blockRec.pos().toShortString());
@@ -144,9 +144,9 @@ public class ItemIO implements ClientModInitializer {
         }
     }
 
-    private void removeFarOnesButDontRemoveThem(PlayerEntity player) {
+    private void showFarInventories(PlayerEntity player) {
         for (BlockRec blockRec : this.inventoryBlocks) {
-            if (!blockRec.tooFar(player)) continue;
+            if (!blockRec.isTooFar(player)) continue;
             var pos = blockRec.getParticlePosition();
             player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
         }

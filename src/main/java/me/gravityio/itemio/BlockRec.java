@@ -24,7 +24,7 @@ public record BlockRec(BlockPos pos, Direction side) {
 
     @Override
     public int hashCode() {
-        return Objects.hash(pos, side);
+        return Objects.hash(pos);
     }
 
     public BlockHitResult toRaycast() {
@@ -35,7 +35,7 @@ public record BlockRec(BlockPos pos, Direction side) {
         return pos.toCenterPos().offset(side, 0.75f);
     }
 
-    public boolean tooFar(PlayerEntity player) {
+    public boolean isTooFar(PlayerEntity player) {
         return player.getEyePos().squaredDistanceTo(pos.toCenterPos()) > MAX_BREAK_SQUARED_DISTANCE;
     }
 }
