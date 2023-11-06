@@ -70,7 +70,7 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void onTick(MinecraftClient client) {
-        KeybindManager.tick(client.getWindow().getHandle());
+        KeybindManager.tick(client);
         if (this.waiting) {
             client.player.setSneaking(false);
         }

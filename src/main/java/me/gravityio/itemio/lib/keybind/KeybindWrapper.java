@@ -12,6 +12,7 @@ public class KeybindWrapper {
     private Runnable whileRunnable;
     private Runnable pressedRunnable;
     private Runnable releasedRunnable;
+    protected boolean workInScreen = false;
     protected boolean down;
 
     public KeybindWrapper(KeyBinding bind) {
@@ -45,6 +46,14 @@ public class KeybindWrapper {
 
     public void setOnReleaseCallback(Runnable visitor) {
         this.releasedRunnable = visitor;
+    }
+
+    public boolean getWorkInScreen() {
+        return workInScreen;
+    }
+
+    public void setWorkInScreen(boolean workInScreen) {
+        this.workInScreen = workInScreen;
     }
 
     protected void whilePressed() {

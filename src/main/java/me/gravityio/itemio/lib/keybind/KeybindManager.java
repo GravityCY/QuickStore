@@ -1,6 +1,7 @@
 package me.gravityio.itemio.lib.keybind;
 
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.InputUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,8 +26,11 @@ public class KeybindManager {
         }
     }
 
-    public static void tick(long handle) {
+    public static void tick(MinecraftClient client) {
+        var handle = client.getWindow().getHandle();
         for (KeybindWrapper bind : binds) {
+            if (!bind.workInScreen && client.currentScreen != null) continue;
+
             boolean prevDown = bind.down;
             bind.down = InputUtil.isKeyPressed(handle, KeyBindingHelper.getBoundKeyOf(bind.bind).getCode());
             if (bind.down)
