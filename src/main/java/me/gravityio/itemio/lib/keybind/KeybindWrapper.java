@@ -36,16 +36,16 @@ public class KeybindWrapper {
         KeybindManager.add(this);
     }
 
-    public void setWhilePressedCallback(Runnable visitor) {
+    public void whilePressed(Runnable visitor) {
         this.whileRunnable = visitor;
     }
 
-    public void setOnPressedCallback(Runnable visitor) {
-        this.pressedRunnable = visitor;
+    public void onPressed(Runnable runnable) {
+        this.pressedRunnable = runnable;
     }
 
-    public void setOnReleaseCallback(Runnable visitor) {
-        this.releasedRunnable = visitor;
+    public void onRelease(Runnable runnable) {
+        this.releasedRunnable = runnable;
     }
 
     public boolean getWorkInScreen() {
@@ -56,17 +56,17 @@ public class KeybindWrapper {
         this.workInScreen = workInScreen;
     }
 
-    protected void whilePressed() {
+    protected void internalWhilePressed() {
         if (this.whileRunnable == null) return;
         this.whileRunnable.run();
     }
 
-    protected void onPressed() {
+    protected void internalOnPressed() {
         if (this.pressedRunnable == null) return;
         this.pressedRunnable.run();
     }
 
-    protected void onRelease() {
+    protected void internalOnRelease() {
         if (this.releasedRunnable == null) return;
         this.releasedRunnable.run();
     }

@@ -6,37 +6,26 @@ import me.gravityio.itemio.lib.keybind.KeybindWrapper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.Registries;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,18 +33,19 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
-import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
-
 public class ItemIO implements ClientModInitializer {
-    public static final String MOD_ID = "quickstore";
+    public static final String MOD_ID = "itemio";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
     public static final ParticleEffect STORE_PARTICLE = ParticleTypes.HAPPY_VILLAGER;
     public static final ParticleEffect ADD_BLOCK_PARTICLE = ParticleTypes.GLOW;
     public static final ParticleEffect REMOVE_BLOCK_PARTICLE = ParticleTypes.SMALL_FLAME;
+
     public static final String FAR_INVENTORY = "messages.quickstore.far_inventory";
+
     private static final KeybindWrapper STORE = KeybindWrapper.of("key.quickstore.store", GLFW.GLFW_KEY_V, "category.gravityio.name");
     private static final KeybindWrapper INCREMENT = KeybindWrapper.of("key.quickstore.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.gravityio.name");
+
     public static boolean IS_DEBUG;
 
     public ItemStack heldStack = ItemStack.EMPTY;
@@ -80,19 +70,20 @@ public class ItemIO implements ClientModInitializer {
         IS_DEBUG = FabricLoader.getInstance().isDevelopmentEnvironment();
         KeybindManager.init();
 
+        ModConfig.HANDLER.load();
+
         var client = MinecraftClient.getInstance();
         ClientTickEvents.END_WORLD_TICK.register(w -> this.onTick(client));
         ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> this.onScreenFullyOpened(client, handler));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> this.clear());
 
-        STORE.setWhilePressedCallback(() -> this.whileStorePressed(client));
-        STORE.setOnReleaseCallback(() -> this.onReleaseStore(client));
+        STORE.whilePressed(() -> this.whileStorePressed(client));
+        STORE.onRelease(() -> this.onReleaseStore(client));
 
-        WorldRenderEvents.END.register(this::onRender);
+        WorldRenderEvents.END.register((a) -> this.onRender(client));
     }
 
-    private void onRender(WorldRenderContext context) {
-        MinecraftClient client = context.gameRenderer().getClient();
+    private void onRender(MinecraftClient client) {
 
         if (this.inventoryBlocks.isEmpty()) return;
         if (client.player == null) return;
@@ -124,13 +115,17 @@ public class ItemIO implements ClientModInitializer {
             VertexConsumer v = vc1.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
             matrices.push();
             matrices.translate(transPosition1.x, transPosition1.y, transPosition1.z);
-            RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, 0x40ffffff, 0xF000F0);
+            int argb = Helper.shift(ModConfig.HANDLER.instance().rgba_outline_color, 3, 0, 1, 2);
+            RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, argb, 0xF000F0);
             matrices.pop();
 
             matrices.push();
             matrices.translate(transPosition.x, transPosition.y, transPosition.z);
 
             if (!item.isEmpty()) {
+                float s = (float) Math.sin((double) System.currentTimeMillis() / 1000 + block.pos().hashCode()) * 0.1f;
+                matrices.translate(0, s, 0);
+
                 matrices.push();
                 matrices.scale(0.25f, 0.25f, 0.25f);
                 matrices.multiply(RenderHelper.getBillboard(camera, Vec2f.ZERO, RenderHelper.Billboard.VERTICAL));

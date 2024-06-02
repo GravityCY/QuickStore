@@ -34,11 +34,11 @@ public class KeybindManager {
             boolean prevDown = bind.down;
             bind.down = InputUtil.isKeyPressed(handle, KeyBindingHelper.getBoundKeyOf(bind.bind).getCode());
             if (bind.down)
-                bind.whilePressed();
+                bind.internalWhilePressed();
             if (bind.down && !prevDown)
-                bind.onPressed();
+                bind.internalOnPressed();
             if (prevDown && !bind.down)
-                bind.onRelease();
+                bind.internalOnRelease();
         }
     }
 }
