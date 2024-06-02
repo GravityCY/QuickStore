@@ -1,30 +1,50 @@
 package me.gravityio.itemio;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import me.gravityio.itemio.lib.keybind.KeybindManager;
 import me.gravityio.itemio.lib.keybind.KeybindWrapper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.*;
+import net.minecraft.client.render.item.ItemRenderer;
+import net.minecraft.client.render.model.json.ModelTransformationMode;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.math.Vec2f;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
+import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
 
 public class ItemIO implements ClientModInitializer {
     public static final String MOD_ID = "quickstore";
@@ -36,7 +56,7 @@ public class ItemIO implements ClientModInitializer {
     private static final KeybindWrapper STORE = KeybindWrapper.of("key.quickstore.store", GLFW.GLFW_KEY_V, "category.gravityio.name");
     private static final KeybindWrapper INCREMENT = KeybindWrapper.of("key.quickstore.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.gravityio.name");
     public static boolean IS_DEBUG;
-    // STUFF
+
     public ItemStack heldStack = ItemStack.EMPTY;
     public BlockRec currentInventoryBlock;
     public Set<BlockRec> inventoryBlocks = new HashSet<>();
@@ -45,7 +65,6 @@ public class ItemIO implements ClientModInitializer {
     public boolean increment;
     public int slot;
     private int splitCount;
-    // END OF STUFF
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -67,6 +86,63 @@ public class ItemIO implements ClientModInitializer {
 
         STORE.setWhilePressedCallback(() -> this.whileStorePressed(client));
         STORE.setOnReleaseCallback(() -> this.onReleaseStore(client));
+
+        WorldRenderEvents.END.register(worldContext -> {
+            if (this.inventoryBlocks.isEmpty()) return;
+            if (client.player == null) return;
+            if (this.waiting) return;
+
+            var hit = client.getCameraEntity().raycast(5, 0, false);
+            if (!Helper.isInventory(client.world, hit)) {
+                return;
+            }
+
+            ItemStack item = client.player.getMainHandStack();
+            int split = item.getCount() / this.inventoryBlocks.size();
+
+            Camera camera = client.gameRenderer.getCamera();
+            MatrixStack matrices = new MatrixStack();
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
+
+            VertexConsumerProvider.Immediate vc1 = client.getBufferBuilders().getEffectVertexConsumers();
+
+            for (BlockRec block : this.inventoryBlocks) {
+                Vec3d targetPosition = block.getParticlePosition();
+                Vec3d targetPosition1 = block.pos().toCenterPos();
+                Vec3d transPosition = targetPosition.subtract(camera.getPos());
+                Vec3d transPosition1 = targetPosition1.subtract(camera.getPos());
+
+                RenderSystem.enableDepthTest();
+
+                VertexConsumer v = vc1.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
+                matrices.push();
+                matrices.translate(transPosition1.x, transPosition1.y, transPosition1.z);
+                RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, 0x40ffffff, 0xF000F0);
+                matrices.pop();
+
+                matrices.push();
+                matrices.translate(transPosition.x, transPosition.y, transPosition.z);
+
+                if (!item.isEmpty()) {
+                    matrices.push();
+                    matrices.scale(0.25f, 0.25f, 0.25f);
+                    matrices.multiply(RenderHelper.getBillboard(camera, Vec2f.ZERO, RenderHelper.Billboard.VERTICAL));
+                    RenderHelper.renderItem(client, vc1, matrices, client.world, item, 0, 0, 0);
+                    matrices.pop();
+
+                    matrices.push();
+                    matrices.scale(0.5f, 0.5f, 0.5f);
+                    matrices.multiply(camera.getRotation());
+                    RenderHelper.renderText(matrices, client.textRenderer, vc1, Text.literal(String.valueOf(split)), 0.5f, 0xffffffff);
+                    matrices.pop();
+                }
+
+                matrices.pop();
+                vc1.draw();
+                RenderSystem.disableDepthTest();
+            }
+        });
     }
 
     private void onTick(MinecraftClient client) {
