@@ -46,8 +46,8 @@ public class ItemIO implements ClientModInitializer {
 
     public static final String FAR_INVENTORY = "messages.quickstore.far_inventory";
 
-    private static final KeybindWrapper STORE = KeybindWrapper.of("key.quickstore.store", GLFW.GLFW_KEY_V, "category.gravityio.name");
-    private static final KeybindWrapper INCREMENT = KeybindWrapper.of("key.quickstore.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.gravityio.name");
+    private static final KeybindWrapper STORE = KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name");
+    private static final KeybindWrapper INCREMENT = KeybindWrapper.of("key.itemio.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.itemio.name");
 
     public static boolean IS_DEBUG;
 
@@ -166,6 +166,7 @@ public class ItemIO implements ClientModInitializer {
     private void onTick(MinecraftClient client) {
         KeybindManager.tick(client);
         if (this.waiting) {
+            // Riskily disallow screens from opening while waiting
             client.setScreen(null);
             client.player.setSneaking(false);
         }

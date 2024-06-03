@@ -1,5 +1,5 @@
 {
-  "category.gravityio.name": "Gravitational Keybinds",
+  "category.itemio.name": "Item IO",
   "key.itemio.store": "Store",
   "key.itemio.increment": "Increment",
   "messages.itemio.far_inventory": "§cSome inventories were too far away!",
