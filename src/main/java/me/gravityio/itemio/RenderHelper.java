@@ -47,36 +47,36 @@ public class RenderHelper {
         }
     }
 
-    public static void renderCube(VertexConsumer v, Matrix4f matrix, float width, float height, float depth, int argb, int light) {
-        v.vertex(matrix, -width, -height, depth).color(argb).light(light).next();
-        v.vertex(matrix, width, -height, depth).color(argb).light(light).next();
-        v.vertex(matrix, width, height, depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, height, depth).color(argb).light(light).next();
+    public static void renderCube(VertexConsumer v, Matrix4f matrix, float width, float height, float depth, int r, int g, int b, int a, int light) {
+        v.vertex(matrix, -width, -height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, -height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, height, depth).color(r, g, b, a).light(light).next();
 
-        v.vertex(matrix, width, -height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, -height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, width, height, -depth).color(argb).light(light).next();
+        v.vertex(matrix, width, -height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, -height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, height, -depth).color(r, g, b, a).light(light).next();
 
-        v.vertex(matrix, -width, -height, depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, height, depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, -height, -depth).color(argb).light(light).next();
+        v.vertex(matrix, -width, -height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, -height, -depth).color(r, g, b, a).light(light).next();
 
-        v.vertex(matrix, width, -height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, width, height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, width, height, depth).color(argb).light(light).next();
-        v.vertex(matrix, width, -height, depth).color(argb).light(light).next();
+        v.vertex(matrix, width, -height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, -height, depth).color(r, g, b, a).light(light).next();
 
-        v.vertex(matrix, -width, height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, height, depth).color(argb).light(light).next();
-        v.vertex(matrix, width, height, depth).color(argb).light(light).next();
-        v.vertex(matrix, width, height, -depth).color(argb).light(light).next();
+        v.vertex(matrix, -width, height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, height, -depth).color(r, g, b, a).light(light).next();
 
-        v.vertex(matrix, width, -height, -depth).color(argb).light(light).next();
-        v.vertex(matrix, width, -height, depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, -height, depth).color(argb).light(light).next();
-        v.vertex(matrix, -width, -height, -depth).color(argb).light(light).next();
+        v.vertex(matrix, width, -height, -depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, width, -height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, -height, depth).color(r, g, b, a).light(light).next();
+        v.vertex(matrix, -width, -height, -depth).color(r, g, b, a).light(light).next();
     }
 
     public enum Billboard {
