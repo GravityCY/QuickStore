@@ -10,6 +10,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.FurnaceOutputSlot;
 import net.minecraft.screen.slot.Slot;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,34 +22,20 @@ import java.util.function.Predicate;
  */
 public class ScreenHandlerHelper {
 
-    /**
-     * When you send the slot the player clicked to the server, you
-     * don't actually send the slot index that starts from hotbar -> player inventory -> opened inventory.<br>
-     * It's actually kind of dependent on each screen.<br><br>
-     * <p>
-     * What you're sending is actually the id of the slot, and the ID of the slot is handled
-     * by the implementation of each ScreenHandler, so for instance the GenericContainerScreenHandler,
-     * adds the slots from top to bottom, so first all the slots of the GenericContainer, then the PlayerInventory
-     * and then the Hotbar, so 0 would be top left of the GenericContainer, and as said previously
-     * if some ScreenHandler decides to add the Player Hotbar first it would completely
-     * fuck everything up, and then index 0 would be the hotbar, for instance.<br><br>
-     * <p>
-     * ALL OF IT IS DEPENDENT ON EACH SCREEN HANDLER, THIS IS A QUICK SOLUTION TO THAT PROBLEM,
-     * THE BEST WAY TO CHECK IT SO ITERATE THROUGH ALL THE SLOTS AND FIND THE SAME ITEMSTACK <br><br>
-     * <p>
-     * Fuck it imma search the whole inventory for the ItemStack
-     */
-    public static int toHandlerID(int handlerSize, int playerInvSize, int slot) {
-        return handlerSize - playerInvSize + slot;
-    }
+    public static Predicate<Slot> CONTAINER_SLOTS_ONLY = slot -> !(slot.inventory instanceof PlayerInventory);
+    public static Predicate<Slot> PLAYER_SLOTS_ONLY = slot -> (slot.inventory instanceof PlayerInventory);
 
-    public static int toHandlerID(ScreenHandler handler, int index, InventoryType type) {
-        if (type == InventoryType.TOP)
-            return index;
-        var slot = getPredicateSlot(handler, s -> s.inventory instanceof PlayerInventory && s.getIndex() == index);
-        if (slot == null) return -1;
-        return slot.id;
-    }
+    /*
+      When you send the slot the player clicked to the server, you
+      don't actually send the index of the slot that starts from hotbar -> player inventory -> opened inventory.<br>
+      It's actually kind of dependent on each screen.<br><br>
+      <p>
+      What you're sending is actually the id of the slot, and the ID of the slot is handled
+      by the implementation of each ScreenHandler, so for instance the GenericContainerScreenHandler,
+      adds the slots from top to bottom, so first all the slots of the GenericContainer, then the PlayerInventory
+      and then the Hotbar, so 0 would be top left of the GenericContainer
+      <p>
+     */
 
     /**
      * Determines if the given slot is an output slot.
@@ -86,17 +73,29 @@ public class ScreenHandlerHelper {
      * @return the ID of the output slot, or -1 if no output slot is found
      */
     public static int getOutputSlotID(ScreenHandler handler, InventoryType type) {
-        List<Slot> slots = new ArrayList<>();
-        if (type == InventoryType.TOP) {
-            slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
-        } else if (type == InventoryType.BOTTOM) {
-            slots = getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
-        }
+        List<Slot> slots = switch (type) {
+            case PLAYER -> getPredicateSlots(handler, PLAYER_SLOTS_ONLY);
+            case OTHER -> getPredicateSlots(handler, CONTAINER_SLOTS_ONLY);
+        };
         for (Slot slot : slots) {
             if (slot.getStack().isEmpty() || !isOutputSlot(slot)) continue;
             return slot.id;
         }
         return -1;
+    }
+
+    private static List<Slot> getEmptySlots(ScreenHandler handler, InventoryType type) {
+        return switch (type) {
+            case PLAYER -> getPredicateSlots(handler, slot -> PLAYER_SLOTS_ONLY.test(slot) && !slot.hasStack());
+            case OTHER -> getPredicateSlots(handler, slot -> CONTAINER_SLOTS_ONLY.test(slot) && !slot.hasStack());
+        };
+    }
+
+    private static List<Slot> getEmptySlots(ScreenHandler handler, InventoryType type, Predicate<Slot> predicate) {
+        return switch (type) {
+            case PLAYER -> getPredicateSlots(handler, slot -> PLAYER_SLOTS_ONLY.test(slot) && !slot.hasStack() && predicate.test(slot));
+            case OTHER -> getPredicateSlots(handler, slot -> CONTAINER_SLOTS_ONLY.test(slot) && !slot.hasStack() && predicate.test(slot));
+        };
     }
 
     /**
@@ -107,12 +106,10 @@ public class ScreenHandlerHelper {
      * @return the ID of the first empty slot found, or -1 if no empty slot is found
      */
     private static int getEmptySlotID(ScreenHandler handler, InventoryType type) {
-        List<Slot> slots = new ArrayList<>();
-        if (type == InventoryType.TOP) {
-            slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
-        } else if (type == InventoryType.BOTTOM) {
-            slots = getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
-        }
+        List<Slot> slots = switch (type) {
+            case PLAYER -> getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
+            case OTHER -> getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
+        };
 
         for (Slot slot : slots) {
             if (!slot.getStack().isEmpty()) continue;
@@ -130,12 +127,10 @@ public class ScreenHandlerHelper {
      * @return The ID of the first non-empty slot, or -1 if no non-empty slots are found.
      */
     public static int getNonEmptySlotID(ScreenHandler handler, InventoryType type) {
-        List<Slot> slots = new ArrayList<>();
-        if (type == InventoryType.TOP) {
-            slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
-        } else if (type == InventoryType.BOTTOM) {
-            slots = getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
-        }
+        List<Slot> slots = switch (type) {
+            case PLAYER -> getPredicateSlots(handler, PLAYER_SLOTS_ONLY);
+            case OTHER -> getPredicateSlots(handler, CONTAINER_SLOTS_ONLY);
+        };
 
         for (Slot slot : slots) {
             if (slot.getStack().isEmpty()) continue;
@@ -145,7 +140,7 @@ public class ScreenHandlerHelper {
     }
 
     /**
-     * Finds the slot ID of a given slot index in a screen handler.
+     * Finds the slot ID using a slot index in a screen handler.
      *
      * @param slotIndex the index of the slot
      * @param handler   the screen handler
@@ -184,9 +179,9 @@ public class ScreenHandlerHelper {
      */
     public static int findSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type, BiPredicate<ItemStack, ItemStack> equalPredicate) {
         List<Slot> slots = new ArrayList<>();
-        if (type == InventoryType.TOP) {
+        if (type == InventoryType.OTHER) {
             slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
-        } else if (type == InventoryType.BOTTOM) {
+        } else if (type == InventoryType.PLAYER) {
             slots = getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
         }
 
@@ -275,6 +270,54 @@ public class ScreenHandlerHelper {
         }
     }
 
+//    public static void splitAny(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
+//        var handler = player.currentScreenHandler;
+//        int count = getCountAt(handler, splitSlotId);
+//        int splits = (int) Math.floor((double) count / newSize);
+//        List<Slot> freeList = getEmptySlots(handler, InventoryType.PLAYER, (slot) -> slot.getIndex() >= 0 && slot.getIndex() < 36);
+//        if (freeList.size() >= splits) {
+//            Slot[] freeNeeded = new Slot[splits];
+//            for (int i = 0; i < freeNeeded.length; i++) {
+//                freeNeeded[i] = freeList.get(i);
+//            }
+//            splitStackQuickCraft(manager, player, splitSlotId, freeNeeded, splits);
+//        } else {
+//            splitStackShift();
+//        }
+//    }
+
+//    public static void splitStackQuickCraft(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, Slot[] freeSlots, int splits) {
+//        if (freeSlots.length < splits) return;
+//
+//        Slot[] freeNeeded = new Slot[splits];
+//        for (int i = 0; i < freeNeeded.length; i++) {
+//            freeNeeded[i] = freeSlots.get(i);
+//        }
+//
+//        Helper.leftClickSlot(manager, player, splitSlotId);
+//        Helper.quickcraftSlots(manager, player, freeNeeded, GLFW.GLFW_MOUSE_BUTTON_1);
+//        Helper.leftClickSlot(manager, player, splitSlotId);
+//    }
+
+    public static Slot[] splitStackQuickCraft(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
+        var handler = player.currentScreenHandler;
+        int count = getCountAt(handler, splitSlotId);
+        int splits = (int) Math.floor((double) count / newSize);
+        List<Slot> free = getEmptySlots(handler, InventoryType.PLAYER, (slot) -> slot.getIndex() >= 0 && slot.getIndex() < 36);
+        if (free.size() < splits) return null;
+
+        Slot[] freeNeeded = new Slot[splits];
+        for (int i = 0; i < freeNeeded.length; i++) {
+            freeNeeded[i] = free.get(i);
+        }
+
+        Helper.leftClickSlot(manager, player, splitSlotId);
+        Helper.quickcraftSlots(manager, player, freeNeeded, GLFW.GLFW_MOUSE_BUTTON_1);
+        Helper.leftClickSlot(manager, player, splitSlotId);
+
+        return freeNeeded;
+    }
+
     public static void splitStackShift(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
         var handler = player.currentScreenHandler;
         int count = getCountAt(handler, splitSlotId);
@@ -286,7 +329,7 @@ public class ScreenHandlerHelper {
             return;
         }
 
-        int availableSlot = getEmptySlotID(handler, InventoryType.BOTTOM);
+        int availableSlot = getEmptySlotID(handler, InventoryType.PLAYER);
         for (int i = 0; i < 10; i++) {
             if (shouldSplit(player, splitSlotId, newSize)) {
                 Helper.rightClickSlot(manager, player, splitSlotId);
@@ -400,7 +443,7 @@ public class ScreenHandlerHelper {
 
 
     public enum InventoryType {
-        BOTTOM, TOP
+        PLAYER, OTHER
     }
 
 }

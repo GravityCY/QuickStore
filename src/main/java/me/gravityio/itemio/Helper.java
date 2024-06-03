@@ -1,13 +1,21 @@
 package me.gravityio.itemio;
 
+import net.minecraft.block.SignBlock;
+import net.minecraft.block.WallSignBlock;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.state.property.Properties;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.Pair;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.lwjgl.glfw.GLFW;
 
@@ -55,8 +63,8 @@ public class Helper {
      */
     public static byte[] getBytes(int value, boolean left) {
         byte[] bytes = new byte[4];
-        for (int i = 0; i < 3; i++) {
-            bytes[left ? 3 - i : i] = getByteAt(value, i);
+        for (int i = 0; i < 4; i++) {
+            bytes[i] = getByteAt(value, left ? 3 - i : i);
         }
         return bytes;
     }
@@ -71,9 +79,29 @@ public class Helper {
     public static boolean isInventory(World world, HitResult hitResult) {
         if (hitResult.getType() != HitResult.Type.BLOCK) return false;
         var blockHit = (BlockHitResult) hitResult;
-        var blockPos = blockHit.getBlockPos();
-        var blockEntity = world.getBlockEntity(blockPos);
-        return blockEntity instanceof Inventory;
+        return isInventory(world, blockHit.getBlockPos());
+    }
+
+    public static boolean isInventory(World world, BlockPos blockPos) {
+        var blockState = world.getBlockState(blockPos);
+        if (blockState.getBlock() instanceof WallSignBlock) {
+            return isInventory(world, blockPos.offset(blockState.get(Properties.HORIZONTAL_FACING).getOpposite(), 1));
+        }
+        return world.getBlockEntity(blockPos) instanceof Inventory;
+    }
+
+    public static BlockPos getInventory(World world, HitResult hitResult) {
+        if (hitResult.getType() != HitResult.Type.BLOCK) return null;
+        var blockHit = (BlockHitResult) hitResult;
+        return getInventory(world, blockHit.getBlockPos());
+    }
+
+    public static BlockPos getInventory(World world, BlockPos pos) {
+        var blockState = world.getBlockState(pos);
+        if (blockState.getBlock() instanceof WallSignBlock) {
+            return getInventory(world, pos.offset(blockState.get(Properties.HORIZONTAL_FACING).getOpposite(), 1));
+        }
+        return world.getBlockEntity(pos) == null ? null : pos;
     }
 
     /**
@@ -85,12 +113,22 @@ public class Helper {
      * @param clickSlotId the ID of the clicked slot
      * @return a pair containing the clicked item stack and the cursor item stack
      */
-    public static Pair<Object, Object> leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
+    public static Pair<ItemStack, ItemStack> leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
         var screen = player.currentScreenHandler;
         manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
         var click = screen.getSlot(clickSlotId).getStack().copy();
         var cursor = screen.getCursorStack().copy();
         return new Pair<>(click, cursor);
+    }
+
+    public static void quickcraftSlots(ClientPlayerInteractionManager manager, PlayerEntity player, Slot[] clickSlots, int button) {
+//					this.onMouseClick(slot2, slot2.id, ScreenHandler.packQuickCraftData(1, this.heldButtonType), SlotActionType.QUICK_CRAFT);
+        var screen = player.currentScreenHandler;
+        manager.clickSlot(screen.syncId, -999, ScreenHandler.packQuickCraftData(0, button), SlotActionType.QUICK_CRAFT, player);
+        for (Slot clickSlot : clickSlots) {
+            manager.clickSlot(screen.syncId, clickSlot.id, ScreenHandler.packQuickCraftData(1, button), SlotActionType.QUICK_CRAFT, player);
+        }
+        manager.clickSlot(screen.syncId, -999, ScreenHandler.packQuickCraftData(2, button), SlotActionType.QUICK_CRAFT, player);
     }
 
     /**

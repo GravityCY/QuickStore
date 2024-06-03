@@ -18,10 +18,12 @@ import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
@@ -29,6 +31,7 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -54,8 +57,9 @@ public class ItemIO implements ClientModInitializer {
     public Iterator<BlockRec> inventoryBlockIterator;
     public boolean waiting;
     public boolean increment;
-    public int slot;
+    public int slotIndex;
     private int splitCount;
+    private Iterator<Integer> splitSlotIndexArray;
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -162,24 +166,26 @@ public class ItemIO implements ClientModInitializer {
     private void onTick(MinecraftClient client) {
         KeybindManager.tick(client);
         if (this.waiting) {
+            client.setScreen(null);
             client.player.setSneaking(false);
         }
     }
 
     private void whileStorePressed(MinecraftClient client) {
-        var hit = client.getCameraEntity().raycast(5, 0, false);
+        var hit = client.getCameraEntity().raycast(5, client.getTickDelta(), false);
         this.showFarInventories(client.player);
 
-        if (this.waiting || !Helper.isInventory(client.world, hit)) {
+        BlockPos blockPos = Helper.getInventory(client.world, hit);
+        if (this.waiting || blockPos == null) {
             return;
         }
 
         var blockHit = (BlockHitResult) hit;
-        var blockRec = new BlockRec(blockHit.getBlockPos(), blockHit.getSide());
+        var blockRec = new BlockRec(blockPos, blockHit.getSide());
         if (this.inventoryBlocks.contains(blockRec)) return;
-        DEBUG("Adding '{}'", blockHit.getBlockPos().toShortString());
+        DEBUG("Adding '{}'", blockPos.toShortString());
         var pos = blockRec.getParticlePosition();
-        client.world.addParticle(ADD_BLOCK_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
+        client.world.addParticle(ADD_BLOCK_PARTICLE, pos.x, pos.y , pos.z, 0, 0, 0);
         this.inventoryBlocks.add(blockRec);
         client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, client.world.random.nextFloat() + 0.5f);
     }
@@ -199,12 +205,21 @@ public class ItemIO implements ClientModInitializer {
         this.heldStack = client.player.getMainHandStack().copy();
         this.inventoryBlockIterator = this.inventoryBlocks.iterator();
         this.waiting = true;
-        this.slot = client.player.getInventory().selectedSlot;
-        this.splitCount = this.heldStack.getCount() / this.inventoryBlocks.size();
+        this.slotIndex = client.player.getInventory().selectedSlot;
+        this.splitCount = (int) Math.floor((double) this.heldStack.getCount() / this.inventoryBlocks.size());
         this.increment = INCREMENT.isPressed();
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
+
+        if (!this.heldStack.isEmpty()) {
+            int slotId = ScreenHandlerHelper.findSlotID(this.slotIndex, client.player.currentScreenHandler, client.player.getInventory());
+            Slot[] slots = ScreenHandlerHelper.splitStackQuickCraft(client.interactionManager, client.player, slotId, splitCount);
+            if (slots != null) {
+                this.splitSlotIndexArray = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
+            }
+        }
+
         this.nextInventoryBlock();
         this.sendOpenScreenPacket(client, this.currentInventoryBlock);
     }
@@ -216,6 +231,7 @@ public class ItemIO implements ClientModInitializer {
         this.inventoryBlockIterator = null;
         this.currentInventoryBlock = null;
         this.heldStack = null;
+        this.splitSlotIndexArray = null;
     }
 
     private void removeFarOnes(PlayerEntity player) {
@@ -257,18 +273,24 @@ public class ItemIO implements ClientModInitializer {
     private void onScreenFullyOpened(MinecraftClient client, ScreenHandler handler) {
         if (!this.waiting) return;
 
-        var slotId = ScreenHandlerHelper.findSlotID(this.slot, handler, client.player.getInventory());
-        var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
+        var slotId = ScreenHandlerHelper.findSlotID(this.slotIndex, handler, client.player.getInventory());
+        var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
         if (outputSlotId != -1 && (this.heldStack.isEmpty() || ItemStack.canCombine(handler.getSlot(outputSlotId).getStack(), this.heldStack))) {
             ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
         } else {
             if (this.heldStack.isEmpty()) {
-                int clickSlotId = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.TOP);
-                if (clickSlotId != -1) {
-                    ScreenHandlerHelper.moveToOrShift(client, clickSlotId, slotId);
+                int nonEmptySlotID = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
+                if (nonEmptySlotID != -1) {
+                    ScreenHandlerHelper.moveToOrShift(client, nonEmptySlotID, slotId);
                 }
             } else {
-                ScreenHandlerHelper.splitStackShift(client.interactionManager, client.player, slotId, this.splitCount);
+                if (this.splitSlotIndexArray != null) {
+                    int splitSlotIndex = this.splitSlotIndexArray.next();
+                    var splitSlotId = ScreenHandlerHelper.findSlotID(splitSlotIndex, handler,client.player.getInventory());
+                    Helper.shiftClickSlot(client.interactionManager, client.player, splitSlotId);
+                } else {
+                    ScreenHandlerHelper.splitStackShift(client.interactionManager, client.player, slotId, this.splitCount);
+                }
             }
         }
 
@@ -279,7 +301,7 @@ public class ItemIO implements ClientModInitializer {
             if (!ItemStack.areEqual(this.heldStack, client.player.getMainHandStack())) {
                 client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
             }
-            if (this.increment && this.inventoryBlocks.size() == 1) {
+            if (INCREMENT.isPressed()) {
                 client.player.getInventory().scrollInHotbar(-1);
             }
             this.clear();
