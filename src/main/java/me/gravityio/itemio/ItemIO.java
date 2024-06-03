@@ -95,7 +95,7 @@ public class ItemIO implements ClientModInitializer {
         }
 
         ItemStack item = client.player.getMainHandStack();
-        int split = item.getCount() / this.inventoryBlocks.size();
+        int split = (int) Math.floor((double) item.getCount() / this.inventoryBlocks.size());
 
         Camera camera = client.gameRenderer.getCamera();
         MatrixStack matrices = new MatrixStack();
@@ -103,6 +103,20 @@ public class ItemIO implements ClientModInitializer {
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
 
         VertexConsumerProvider.Immediate vc1 = client.getBufferBuilders().getEffectVertexConsumers();
+
+        byte[] rgba = Helper.getBytes(ModConfig.HANDLER.instance().rgba_outline_color, true);
+        int r, g, b, a;
+        r = rgba[0] & 0xFF;
+        g = rgba[1] & 0xFF;
+        b = rgba[2] & 0xFF;
+        a = rgba[3] & 0xFF;
+
+        if (a != 0) {
+            int al = Math.max(a, 30);
+            int ah = Math.min(a + 50, 255);
+            double p = (Math.sin(System.currentTimeMillis() / 250d) + 1) / 2;
+            a = (int) (al + ((ah - al) * p));
+        }
 
         for (BlockRec block : this.inventoryBlocks) {
             Vec3d targetPosition = block.getParticlePosition();
@@ -115,8 +129,8 @@ public class ItemIO implements ClientModInitializer {
             VertexConsumer v = vc1.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
             matrices.push();
             matrices.translate(transPosition1.x, transPosition1.y, transPosition1.z);
-            int argb = Helper.shift(ModConfig.HANDLER.instance().rgba_outline_color, 3, 0, 1, 2);
-            RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, argb, 0xF000F0);
+
+            RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, r, g, b, a, 0xF000F0);
             matrices.pop();
 
             matrices.push();
