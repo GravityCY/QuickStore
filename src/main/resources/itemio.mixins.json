@@ -4,7 +4,6 @@
   "package": "me.gravityio.itemio.mixins.impl",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "ClientWorldMixin",
     "ScreenHandlerMixin"
   ],
   "injectors": {
