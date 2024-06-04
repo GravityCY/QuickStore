@@ -5,6 +5,7 @@ import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
@@ -170,16 +171,22 @@ public class Helper {
         ItemStack clickOut;
         ItemStack cursorOut;
         if (cursor.isEmpty()) {
-            clickOut = click.copy();
+            clickOut = ItemStack.EMPTY;
             cursorOut = click.copy();
-            clickOut.setCount(click.getCount() / 2);
-            cursorOut.setCount(click.getCount() / 2 + 1);
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
             if (ItemStack.canCombine(click, cursor)) {
-                cursorOut.decrement(1);
-                clickOut.increment(1);
+                int total = clickOut.getCount() + cursorOut.getCount();
+                int countClick = Math.min(total, clickOut.getMaxCount());
+                int countCursor = Math.max(total - clickOut.getMaxCount(), 0);
+
+                clickOut.setCount(countClick);
+                cursorOut.setCount(countCursor);
+            } else {
+                var temp = clickOut;
+                clickOut = cursorOut;
+                cursorOut = temp;
             }
         }
         return new ClickData(clickOut, cursorOut);
@@ -215,6 +222,9 @@ public class Helper {
         return new ClickData(clickOut, cursorOut);
     }
 
-    public static record ClickData(ItemStack click, ItemStack cursor) {}
+    /**
+     * A record containing the stack you clicked and the stack in your cursor
+     */
+    public record ClickData(ItemStack click, ItemStack cursor) {}
 
 }
