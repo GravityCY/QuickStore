@@ -51,6 +51,8 @@ public class ItemIO implements ClientModInitializer {
 
     public static boolean IS_DEBUG;
 
+    public static ItemIO INSTANCE;
+
     public ItemStack heldStack = ItemStack.EMPTY;
     public BlockRec currentInventoryBlock;
     public Set<BlockRec> inventoryBlocks = new HashSet<>();
@@ -60,6 +62,10 @@ public class ItemIO implements ClientModInitializer {
     public int slotIndex;
     private int splitCount;
     private Iterator<Integer> splitSlotIndexArray;
+
+    //TODO: We render on the side that was looked at as the bind was down, what this means is that with chests
+    // placed next to each other, and you hover from chest a to chest b, you can click their sides on the way there, which renders the item inside a chest.
+    // Fix: Detect when the block on a side is not air (or 1x1x1) and fallback to the opposite of the facing direction of the player?
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -71,6 +77,8 @@ public class ItemIO implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        INSTANCE = this;
+
         IS_DEBUG = FabricLoader.getInstance().isDevelopmentEnvironment();
         KeybindManager.init();
 
@@ -106,7 +114,7 @@ public class ItemIO implements ClientModInitializer {
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
 
-        VertexConsumerProvider.Immediate vc1 = client.getBufferBuilders().getEffectVertexConsumers();
+        VertexConsumerProvider.Immediate vc = client.getBufferBuilders().getEffectVertexConsumers();
 
         byte[] rgba = Helper.getBytes(ModConfig.HANDLER.instance().rgba_outline_color, true);
         int r, g, b, a;
@@ -115,7 +123,7 @@ public class ItemIO implements ClientModInitializer {
         b = rgba[2] & 0xFF;
         a = rgba[3] & 0xFF;
 
-        if (a != 0) {
+        if (ModConfig.HANDLER.instance().animate_opacity && a != 0) {
             int al = Math.max(a, 30);
             int ah = Math.min(a + 50, 255);
             double p = (Math.sin(System.currentTimeMillis() / 250d) + 1) / 2;
@@ -130,7 +138,7 @@ public class ItemIO implements ClientModInitializer {
 
             RenderSystem.enableDepthTest();
 
-            VertexConsumer v = vc1.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
+            VertexConsumer v = vc.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
             matrices.push();
             matrices.translate(transPosition1.x, transPosition1.y, transPosition1.z);
 
@@ -141,24 +149,27 @@ public class ItemIO implements ClientModInitializer {
             matrices.translate(transPosition.x, transPosition.y, transPosition.z);
 
             if (!item.isEmpty()) {
-                float s = (float) Math.sin((double) System.currentTimeMillis() / 1000 + block.pos().hashCode()) * 0.1f;
-                matrices.translate(0, s, 0);
+
+                if (ModConfig.HANDLER.instance().animate_item) {
+                    float s = (float) Math.sin((double) System.currentTimeMillis() / 1000 + block.pos().hashCode()) * 0.1f;
+                    matrices.translate(0, s, 0);
+                }
 
                 matrices.push();
-                matrices.scale(0.25f, 0.25f, 0.25f);
                 matrices.multiply(RenderHelper.getBillboard(camera, Vec2f.ZERO, RenderHelper.Billboard.VERTICAL));
-                RenderHelper.renderItem(client, vc1, matrices, client.world, item, 0, 0, 0);
+                matrices.scale(0.25f, 0.25f, 0.25f);
+                RenderHelper.renderItem(client, vc, matrices, client.world, item, 0, 0, 0);
                 matrices.pop();
 
                 matrices.push();
                 matrices.scale(0.5f, 0.5f, 0.5f);
                 matrices.multiply(camera.getRotation());
-                RenderHelper.renderText(matrices, client.textRenderer, vc1, Text.literal(String.valueOf(split)), 0.5f, 0xffffffff);
+                RenderHelper.renderText(matrices, client.textRenderer, vc, Text.literal(String.valueOf(split)), 0.5f, 0xffffffff);
                 matrices.pop();
             }
 
             matrices.pop();
-            vc1.draw();
+            vc.draw();
             RenderSystem.disableDepthTest();
         }
     }
@@ -166,8 +177,6 @@ public class ItemIO implements ClientModInitializer {
     private void onTick(MinecraftClient client) {
         KeybindManager.tick(client);
         if (this.waiting) {
-            // Riskily disallow screens from opening while waiting
-            client.setScreen(null);
             client.player.setSneaking(false);
         }
     }
@@ -287,7 +296,7 @@ public class ItemIO implements ClientModInitializer {
             } else {
                 if (this.splitSlotIndexArray != null) {
                     int splitSlotIndex = this.splitSlotIndexArray.next();
-                    var splitSlotId = ScreenHandlerHelper.findSlotID(splitSlotIndex, handler,client.player.getInventory());
+                    var splitSlotId = ScreenHandlerHelper.findSlotID(splitSlotIndex, handler, client.player.getInventory());
                     Helper.shiftClickSlot(client.interactionManager, client.player, splitSlotId);
                 } else {
                     ScreenHandlerHelper.splitStackShift(client.interactionManager, client.player, slotId, this.splitCount);

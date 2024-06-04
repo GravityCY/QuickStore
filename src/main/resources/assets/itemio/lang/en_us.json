@@ -6,6 +6,12 @@
 
   "yacl.itemio.title": "ItemIO",
 
+  "yacl.itemio.animate_item.label": "Animate Item",
+  "yacl.itemio.animate_item.desc": "Whether to animate item and text.",
+
+  "yacl.itemio.animate_opacity.label": "Animate Opacity",
+  "yacl.itemio.animate_opacity.desc": "Whether to animate the opacity of the selection.",
+
   "yacl.itemio.group.outline_color.label": "Outline Color",
   "yacl.itemio.group.outline_color.desc": "The color to overlay over blocks when storing or extracting from an container.",
 

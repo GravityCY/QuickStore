@@ -2,7 +2,8 @@ package me.gravityio.itemio;
 
 import com.google.gson.GsonBuilder;
 import dev.isxander.yacl3.api.*;
-import dev.isxander.yacl3.api.controller.IntegerFieldControllerBuilder;
+import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
+import dev.isxander.yacl3.api.controller.ControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
@@ -15,6 +16,7 @@ import net.minecraft.util.Identifier;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ModConfig {
@@ -59,22 +61,71 @@ public class ModConfig {
         return opts;
     }
 
+    private static <T> Option.Builder<T> getOption(String nameKey, String descKey, Function<Option<T>, ControllerBuilder<T>> controller, T def, Supplier<T> getter, Consumer<T> setter) {
+        return Option.<T>createBuilder()
+                .name(Text.translatable(nameKey))
+                .description(OptionDescription.of(Text.translatable(descKey)))
+                .controller(controller)
+                .binding(def, getter, setter);
+    }
+
+
+    @SerialEntry
+    public boolean animate_item = true;
+    @SerialEntry
+    public boolean animate_opacity = true;
     @SerialEntry
     public int rgba_outline_color = 0xffffff40;
+
+    public boolean getAnimateItem() {
+        return animate_item;
+    }
+
+    public void setAnimateItem(boolean animateItem) {
+        this.animate_item = animateItem;
+    }
+
+    public int getOutlineColor() {
+        return rgba_outline_color;
+    }
+
+    public void setOutlineColor(int v) {
+        this.rgba_outline_color = v;
+    }
+
+    public boolean getAnimateOpacity() {
+        return this.animate_opacity;
+    }
+
+    public void setAnimateOpacity(boolean v) {
+        this.animate_opacity = v;
+    }
 
     public static Screen getScreen(Screen parent) {
         return YetAnotherConfigLib.create(HANDLER, (defaults, config, builder) -> {
             builder.title(Text.translatable(TITLE));
 
-            Option<Integer>[] outlineColors = getRGBAOptions(defaults.rgba_outline_color, () -> config.rgba_outline_color, (v) -> config.rgba_outline_color = v);
+            Option<Integer>[] outlineColors = getRGBAOptions(defaults.rgba_outline_color, config::getOutlineColor, config::setOutlineColor);
 
             OptionGroup.Builder group = OptionGroup.createBuilder()
                     .name(Text.translatable("yacl.itemio.group.outline_color.label"))
                     .description(OptionDescription.of(Text.translatable("yacl.itemio.group.outline_color.desc")))
                     .options(List.of(outlineColors));
 
+            Option.Builder<Boolean> animateOpt = getOption(
+                    "yacl.itemio.animate_opacity.label", "yacl.itemio.animate_opacity.desc",
+                    BooleanControllerBuilder::create,
+                    defaults.animate_opacity, config::getAnimateOpacity, config::setAnimateOpacity);
+
+            Option.Builder<Boolean> animateItem = getOption(
+                    "yacl.itemio.animate_item.label", "yacl.itemio.animate_item.desc",
+                    BooleanControllerBuilder::create,
+                    defaults.animate_item, config::getAnimateItem, config::setAnimateItem);
+
             var main = ConfigCategory.createBuilder()
                     .name(Text.translatable(TITLE))
+                    .option(animateItem.build())
+                    .option(animateOpt.build())
                     .group(group.build());
 
             builder.category(main.build());
