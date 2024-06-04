@@ -72,11 +72,21 @@ public class ModConfig {
     @SerialEntry
     public boolean need_look_at_container = true;
     @SerialEntry
+    public boolean toggle_bind = true;
+    @SerialEntry
     public boolean animate_item = true;
     @SerialEntry
     public boolean animate_opacity = true;
     @SerialEntry
     public int rgba_outline_color = 0xffffff40;
+
+    public boolean getToggleBind() {
+        return toggle_bind;
+    }
+
+    public void setToggleBind(boolean v) {
+        this.toggle_bind = v;
+    }
 
     public boolean getLookAtContainer() {
         return need_look_at_container;
@@ -136,8 +146,14 @@ public class ModConfig {
                     BooleanControllerBuilder::create,
                     defaults.need_look_at_container, config::getLookAtContainer, config::setLookAtContainer);
 
+            Option.Builder<Boolean> toggleBind = getOption(
+                    "yacl.itemio.toggle_bind.label", "yacl.itemio.toggle_bind.desc",
+                    BooleanControllerBuilder::create,
+                    defaults.toggle_bind, config::getToggleBind, config::setToggleBind);
+
             var main = ConfigCategory.createBuilder()
                     .name(Text.translatable(TITLE))
+                    .option(toggleBind.build())
                     .option(lookContainer.build())
                     .option(animateItem.build())
                     .option(animateOpt.build())

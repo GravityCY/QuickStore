@@ -37,6 +37,7 @@ public class KeybindManager {
                 bind.internalWhilePressed();
             if (bind.down && !prevDown)
                 bind.internalOnPressed();
+
             if (prevDown && !bind.down)
                 bind.internalOnRelease();
         }
