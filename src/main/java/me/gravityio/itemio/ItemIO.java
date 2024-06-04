@@ -9,7 +9,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -92,18 +95,23 @@ public class ItemIO implements ClientModInitializer {
         STORE.whilePressed(() -> this.whileStorePressed(client));
         STORE.onRelease(() -> this.onReleaseStore(client));
 
+        ModEvents.ON_KEY.register((key, scancode, action, modifiers) -> {
+            if (this.inventoryBlocks.isEmpty() || key != GLFW.GLFW_KEY_ESCAPE) return false;
+            this.clear();
+            return true;
+        });
+
         WorldRenderEvents.END.register((a) -> this.onRender(client));
     }
 
     private void onRender(MinecraftClient client) {
-
         if (this.inventoryBlocks.isEmpty()) return;
         if (client.player == null) return;
         if (this.waiting) return;
 
-        var hit = client.getCameraEntity().raycast(5, 0, false);
-        if (!Helper.isInventory(client.world, hit)) {
-            return;
+        if (ModConfig.HANDLER.instance().need_look_at_container) {
+            var hit = client.getCameraEntity().raycast(5, 0, false);
+            if (!Helper.isInventory(client.world, hit)) return;
         }
 
         ItemStack item = client.player.getMainHandStack();
@@ -131,6 +139,9 @@ public class ItemIO implements ClientModInitializer {
         }
 
         for (BlockRec block : this.inventoryBlocks) {
+            int tempG = block.isTooFar(client.player) ? 0 : g;
+            int tempB = block.isTooFar(client.player) ? 0 : b;
+
             Vec3d targetPosition = block.getParticlePosition();
             Vec3d targetPosition1 = block.pos().toCenterPos();
             Vec3d transPosition = targetPosition.subtract(camera.getPos());
@@ -141,8 +152,7 @@ public class ItemIO implements ClientModInitializer {
             VertexConsumer v = vc.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
             matrices.push();
             matrices.translate(transPosition1.x, transPosition1.y, transPosition1.z);
-
-            RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, r, g, b, a, 0xF000F0);
+            RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, r, tempG, tempB, a, 0xF000F0);
             matrices.pop();
 
             matrices.push();
@@ -183,7 +193,6 @@ public class ItemIO implements ClientModInitializer {
 
     private void whileStorePressed(MinecraftClient client) {
         var hit = client.getCameraEntity().raycast(5, client.getTickDelta(), false);
-        this.showFarInventories(client.player);
 
         BlockPos blockPos = Helper.getInventory(client.world, hit);
         if (this.waiting || blockPos == null) {
@@ -195,7 +204,7 @@ public class ItemIO implements ClientModInitializer {
         if (this.inventoryBlocks.contains(blockRec)) return;
         DEBUG("Adding '{}'", blockPos.toShortString());
         var pos = blockRec.getParticlePosition();
-        client.world.addParticle(ADD_BLOCK_PARTICLE, pos.x, pos.y , pos.z, 0, 0, 0);
+        client.world.addParticle(ADD_BLOCK_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
         this.inventoryBlocks.add(blockRec);
         client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, client.world.random.nextFloat() + 0.5f);
     }
@@ -205,10 +214,12 @@ public class ItemIO implements ClientModInitializer {
             return;
         }
 
-        var hit = client.getCameraEntity().raycast(5, 0, false);
-        if (!Helper.isInventory(client.world, hit)) {
-            this.clear();
-            return;
+        if (ModConfig.HANDLER.instance().need_look_at_container) {
+            var hit = client.getCameraEntity().raycast(5, 0, false);
+            if (!Helper.isInventory(client.world, hit)) {
+                this.clear();
+                return;
+            }
         }
 
         this.removeFarOnes(client.player);
@@ -222,16 +233,19 @@ public class ItemIO implements ClientModInitializer {
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
 
-        if (!this.heldStack.isEmpty()) {
-            int slotId = ScreenHandlerHelper.findSlotID(this.slotIndex, client.player.currentScreenHandler, client.player.getInventory());
+        if (!this.heldStack.isEmpty() && !this.inventoryBlocks.isEmpty()) {
+            int slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER);
             Slot[] slots = ScreenHandlerHelper.splitStackQuickCraft(client.interactionManager, client.player, slotId, splitCount);
             if (slots != null) {
                 this.splitSlotIndexArray = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
             }
         }
 
-        this.nextInventoryBlock();
-        this.sendOpenScreenPacket(client, this.currentInventoryBlock);
+        if (this.nextInventoryBlock()) {
+            this.sendOpenScreenPacket(client, this.currentInventoryBlock);
+        } else {
+            this.clear();
+        }
     }
 
     private void clear() {
@@ -261,14 +275,6 @@ public class ItemIO implements ClientModInitializer {
         }
     }
 
-    private void showFarInventories(PlayerEntity player) {
-        for (BlockRec blockRec : this.inventoryBlocks) {
-            if (!blockRec.isTooFar(player)) continue;
-            var pos = blockRec.getParticlePosition();
-            player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
-        }
-    }
-
     private boolean nextInventoryBlock() {
         if (!this.inventoryBlockIterator.hasNext()) return false;
         this.currentInventoryBlock = this.inventoryBlockIterator.next();
@@ -283,7 +289,7 @@ public class ItemIO implements ClientModInitializer {
     private void onScreenFullyOpened(MinecraftClient client, ScreenHandler handler) {
         if (!this.waiting) return;
 
-        var slotId = ScreenHandlerHelper.findSlotID(this.slotIndex, handler, client.player.getInventory());
+        var slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
         var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
         if (outputSlotId != -1 && (this.heldStack.isEmpty() || ItemStack.canCombine(handler.getSlot(outputSlotId).getStack(), this.heldStack))) {
             ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
@@ -296,7 +302,7 @@ public class ItemIO implements ClientModInitializer {
             } else {
                 if (this.splitSlotIndexArray != null) {
                     int splitSlotIndex = this.splitSlotIndexArray.next();
-                    var splitSlotId = ScreenHandlerHelper.findSlotID(splitSlotIndex, handler, client.player.getInventory());
+                    var splitSlotId = ScreenHandlerHelper.findIndexSlotID(splitSlotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
                     Helper.shiftClickSlot(client.interactionManager, client.player, splitSlotId);
                 } else {
                     ScreenHandlerHelper.splitStackShift(client.interactionManager, client.player, slotId, this.splitCount);
@@ -305,6 +311,7 @@ public class ItemIO implements ClientModInitializer {
         }
 
         client.player.closeHandledScreen();
+
         var pos = this.currentInventoryBlock.getParticlePosition();
         client.world.addParticle(STORE_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
         if (!this.nextInventoryBlock()) {
@@ -314,6 +321,13 @@ public class ItemIO implements ClientModInitializer {
             if (INCREMENT.isPressed()) {
                 client.player.getInventory().scrollInHotbar(-1);
             }
+//            if (client.player.getMainHandStack().isEmpty()) {
+//                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::canCombine);
+//                DEBUG("Found slot of item {} at {}", this.heldStack, foundSlotId);
+//                if (foundSlotId != -1) {
+//                    Helper.swapSlot(client.interactionManager, client.player, foundSlotId, this.slotIndex);
+//                }
+//            }
             this.clear();
         } else {
             this.sendOpenScreenPacket(client, this.currentInventoryBlock);

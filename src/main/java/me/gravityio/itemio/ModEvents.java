@@ -3,9 +3,6 @@ package me.gravityio.itemio;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.math.Vec3d;
 
 public class ModEvents {
 
@@ -20,8 +17,22 @@ public class ModEvents {
             }
     );
 
+    public static Event<OnKey> ON_KEY = EventFactory.createArrayBacked(OnKey.class,
+            (listeners) -> (key, scancode, action, modifiers) -> {
+                boolean cancel = false;
+                for (OnKey listener : listeners) {
+                    if (listener.onKey(key, scancode, action, modifiers))
+                        cancel = true;
+                }
+                return cancel;
+            });
+
     public interface OnScreenFullyOpened {
         void onOpened(ScreenHandler screen);
+    }
+
+    public interface OnKey {
+        boolean onKey(int key, int scancode, int action, int modifiers);
     }
 
 }

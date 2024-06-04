@@ -5,7 +5,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
@@ -29,8 +28,8 @@ public class ScreenHandlerHelper {
     /**
      * Returns a predicate based on the given inventory type.
      *
-     * @param  type  the inventory type (PLAYER or OTHER)
-     * @return       a predicate that filters slots based on the inventory type
+     * @param type the inventory type (PLAYER or OTHER)
+     * @return a predicate that filters slots based on the inventory type
      */
     public static Predicate<Slot> getPredicate(InventoryType type) {
         return switch (type) {
@@ -65,9 +64,9 @@ public class ScreenHandlerHelper {
     /**
      * Retrieves a list of slots from the given screen handler that satisfy the specified predicate.
      *
-     * @param  handler     the screen handler from which to retrieve the slots
-     * @param  predicate   the predicate used to filter the slots
-     * @return             a list of slots that satisfy the predicate
+     * @param handler   the screen handler from which to retrieve the slots
+     * @param predicate the predicate used to filter the slots
+     * @return a list of slots that satisfy the predicate
      */
     public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> predicate) {
         return getPredicateSlots(handler, predicate, Predicates.alwaysFalse());
@@ -76,10 +75,10 @@ public class ScreenHandlerHelper {
     /**
      * Retrieves a list of slots from the given screen handler that satisfy the specified predicates.
      *
-     * @param  handler       the screen handler from which to retrieve the slots
-     * @param  shouldAdd     the predicate used to filter the slots to be added to the list
-     * @param  shouldReturn  the predicate used to determine when to stop adding slots to the list
-     * @return               a list of slots that satisfy the predicates
+     * @param handler      the screen handler from which to retrieve the slots
+     * @param shouldAdd    the predicate used to filter the slots to be added to the list
+     * @param shouldReturn the predicate used to determine when to stop adding slots to the list
+     * @return a list of slots that satisfy the predicates
      */
     public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> shouldAdd, Predicate<Slot> shouldReturn) {
         List<Slot> slots = new ArrayList<>();
@@ -94,12 +93,12 @@ public class ScreenHandlerHelper {
     /**
      * Retrieves the first slot from the given screen handler that satisfies the specified predicate.
      *
-     * @param  handler     the screen handler from which to retrieve the slot
-     * @param  predicate   the predicate used to filter the slot
-     * @return             the first slot that satisfies the predicate
+     * @param handler   the screen handler from which to retrieve the slot
+     * @param predicate the predicate used to filter the slot
+     * @return the first slot that satisfies the predicate
      */
     public static Slot getPredicateSlot(ScreenHandler handler, Predicate<Slot> predicate) {
-        List<Slot> slots = getPredicateSlots(handler,predicate, Predicates.alwaysTrue());
+        List<Slot> slots = getPredicateSlots(handler, predicate, Predicates.alwaysTrue());
         return slots.isEmpty() ? null : slots.get(0);
     }
 
@@ -136,8 +135,8 @@ public class ScreenHandlerHelper {
     /**
      * Returns a list of empty slots in the specified screen handler and inventory type.
      *
-     * @param handler the screen handler to search for empty slots
-     * @param type    the inventory type to filter the slots
+     * @param handler   the screen handler to search for empty slots
+     * @param type      the inventory type to filter the slots
      * @param predicate the predicate used to filter the slots
      * @return a list of empty slots
      */
@@ -174,16 +173,8 @@ public class ScreenHandlerHelper {
      * @return The ID of the first non-empty slot, or -1 if no non-empty slots are found.
      */
     public static int getNonEmptySlotID(ScreenHandler handler, InventoryType type) {
-        List<Slot> slots = switch (type) {
-            case PLAYER -> getPredicateSlots(handler, PLAYER_SLOTS_ONLY);
-            case OTHER -> getPredicateSlots(handler, CONTAINER_SLOTS_ONLY);
-        };
-
-        for (Slot slot : slots) {
-            if (slot.getStack().isEmpty()) continue;
-            return slot.id;
-        }
-        return -1;
+        Slot ret = getPredicateSlot(handler, getPredicate(type).and(slot -> !slot.getStack().isEmpty()));
+        return ret != null ? ret.id : -1;
     }
 
     /**
@@ -191,16 +182,12 @@ public class ScreenHandlerHelper {
      *
      * @param slotIndex the index of the slot
      * @param handler   the screen handler
-     * @param inventory the inventory
+     * @param type      the type of inventory to search in (TOP or BOTTOM)
      * @return the slot ID, or -1 if not found
      */
-    public static int findSlotID(int slotIndex, ScreenHandler handler, Inventory inventory) {
-        for (Slot slot : handler.slots) {
-            if (slot.inventory == inventory && slot.getIndex() == slotIndex) {
-                return slot.id;
-            }
-        }
-        return -1;
+    public static int findIndexSlotID(int slotIndex, ScreenHandler handler, InventoryType type) {
+        Slot ret = getPredicateSlot(handler, getPredicate(type).and(slot -> slot.getIndex() == slotIndex));
+        return ret != null ? ret.id : -1;
     }
 
     public static int findSlotID(int slotID, ScreenHandler handler, InventoryType type) {
@@ -350,11 +337,11 @@ public class ScreenHandlerHelper {
     /**
      * Splits the stack in a player's inventory at a specified slot into smaller stacks of a given size.
      *
-     * @param  manager    the client player interaction manager
-     * @param  player     the player whose inventory is being modified
-     * @param  splitSlotId    the ID of the slot containing the stack to be split
-     * @param  newSize    the desired size of each smaller stack
-     * @return            an array of slots containing the smaller stacks, or null if there are not enough empty slots
+     * @param manager     the client player interaction manager
+     * @param player      the player whose inventory is being modified
+     * @param splitSlotId the ID of the slot containing the stack to be split
+     * @param newSize     the desired size of each smaller stack
+     * @return an array of slots containing the smaller stacks, or null if there are not enough empty slots
      */
     public static Slot[] splitStackQuickCraft(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
         var handler = player.currentScreenHandler;

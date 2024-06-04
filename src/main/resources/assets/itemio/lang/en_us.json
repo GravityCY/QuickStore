@@ -3,27 +3,21 @@
   "key.itemio.store": "Store",
   "key.itemio.increment": "Increment",
   "messages.itemio.far_inventory": "§cSome inventories were too far away!",
-
   "yacl.itemio.title": "ItemIO",
-
+  "yacl.itemio.look_container.label": "Need to Look at Container",
+  "yacl.itemio.look_container.desc": "Whether you need to look at a container in order to be able to do operations.",
   "yacl.itemio.animate_item.label": "Animate Item",
   "yacl.itemio.animate_item.desc": "Whether to animate item and text.",
-
   "yacl.itemio.animate_opacity.label": "Animate Opacity",
   "yacl.itemio.animate_opacity.desc": "Whether to animate the opacity of the selection.",
-
   "yacl.itemio.group.outline_color.label": "Outline Color",
   "yacl.itemio.group.outline_color.desc": "The color to overlay over blocks when storing or extracting from an container.",
-
   "yacl.itemio.color.r.label": "Red",
   "yacl.itemio.color.r.desc": "The red part of the color.",
-
   "yacl.itemio.color.g.label": "Green",
   "yacl.itemio.color.g.desc": "The green part of the color.",
-
   "yacl.itemio.color.b.label": "Blue",
   "yacl.itemio.color.b.desc": "The blue part of the color.",
-
   "yacl.itemio.color.a.label": "Alpha",
   "yacl.itemio.color.a.desc": "How transparent the color should be."
 }

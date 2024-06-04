@@ -37,7 +37,7 @@ public class ModConfig {
 
     private static Option<Integer>[] getRGBAOptions(int def, Supplier<Integer> rgbaGetter, Consumer<Integer> rgbaSetter) {
         byte[] rgbaDefaults = Helper.getBytes(def, true);
-        char[] rgbaLabels = {'r','g','b','a'};
+        char[] rgbaLabels = {'r', 'g', 'b', 'a'};
 
         Option<Integer>[] opts = new Option[4];
         for (int i = 0; i < 4; i++) {
@@ -69,13 +69,22 @@ public class ModConfig {
                 .binding(def, getter, setter);
     }
 
-
+    @SerialEntry
+    public boolean need_look_at_container = true;
     @SerialEntry
     public boolean animate_item = true;
     @SerialEntry
     public boolean animate_opacity = true;
     @SerialEntry
     public int rgba_outline_color = 0xffffff40;
+
+    public boolean getLookAtContainer() {
+        return need_look_at_container;
+    }
+
+    public void setLookAtContainer(boolean needLookAtContainer) {
+        this.need_look_at_container = needLookAtContainer;
+    }
 
     public boolean getAnimateItem() {
         return animate_item;
@@ -122,8 +131,14 @@ public class ModConfig {
                     BooleanControllerBuilder::create,
                     defaults.animate_item, config::getAnimateItem, config::setAnimateItem);
 
+            Option.Builder<Boolean> lookContainer = getOption(
+                    "yacl.itemio.look_container.label", "yacl.itemio.look_container.desc",
+                    BooleanControllerBuilder::create,
+                    defaults.need_look_at_container, config::getLookAtContainer, config::setLookAtContainer);
+
             var main = ConfigCategory.createBuilder()
                     .name(Text.translatable(TITLE))
+                    .option(lookContainer.build())
                     .option(animateItem.build())
                     .option(animateOpt.build())
                     .group(group.build());

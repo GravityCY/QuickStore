@@ -5,7 +5,6 @@ import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
@@ -154,13 +153,13 @@ public class Helper {
     /**
      * Swaps two slots in the player's inventory.
      *
-     * @param manager    the client player interaction manager
-     * @param player     the player entity
-     * @param fromSlotId the ID of the slot to swap from
-     * @param toSlotId   the ID of the slot to swap to
+     * @param manager     the client player interaction manager
+     * @param player      the player entity
+     * @param fromSlotId  the ID of the slot to swap from (The actual ID of the slot in the ScreenHandler)
+     * @param toSlotIndex the index of the slot to swap to (the slot in the player's inventory)
      */
-    public static void swapSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int fromSlotId, int toSlotId) {
-        manager.clickSlot(player.currentScreenHandler.syncId, fromSlotId, toSlotId, SlotActionType.SWAP, player);
+    public static void swapSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int fromSlotId, int toSlotIndex) {
+        manager.clickSlot(player.currentScreenHandler.syncId, fromSlotId, toSlotIndex, SlotActionType.SWAP, player);
     }
 
     public static ClickData simulateLeftClick(PlayerEntity player, int clickSlotId) {
@@ -225,6 +224,7 @@ public class Helper {
     /**
      * A record containing the stack you clicked and the stack in your cursor
      */
-    public record ClickData(ItemStack click, ItemStack cursor) {}
+    public record ClickData(ItemStack click, ItemStack cursor) {
+    }
 
 }
