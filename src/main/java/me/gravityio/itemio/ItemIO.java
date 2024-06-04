@@ -65,6 +65,7 @@ public class ItemIO implements ClientModInitializer {
     public int slotIndex;
     private int splitCount;
     private Iterator<Integer> splitSlotIndexArray;
+    private boolean isStoreDown;
 
     // TODO: We render on the side that was looked at as the bind was down, what this means is that with chests
     //  placed next to each other, and you hover from chest a to chest b, you can click their sides on the way there, which renders the item inside a chest.
@@ -94,11 +95,18 @@ public class ItemIO implements ClientModInitializer {
         ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> this.onScreenFullyOpened(client, handler));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> this.clear());
 
-        STORE.whilePressed(() -> this.whileStorePressed(client));
-        STORE.onRelease(() -> this.onReleaseStore(client));
+        STORE.onPressed(() -> {
+            this.isStoreDown = true;
+        });
+
+        STORE.onRelease(() -> {
+            this.isStoreDown = false;
+            this.onReleaseStore(client);
+        });
 
         ModEvents.ON_KEY.register((key, scancode, action, modifiers) -> {
             if (this.inventoryBlocks.isEmpty() || key != GLFW.GLFW_KEY_ESCAPE) return false;
+            this.isStoreDown = false;
             this.clear();
             return true;
         });
@@ -188,6 +196,9 @@ public class ItemIO implements ClientModInitializer {
 
     private void onTick(MinecraftClient client) {
         KeybindManager.tick(client);
+        if (this.isStoreDown) {
+            this.whileStorePressed(client);
+        }
         if (this.waiting) {
             client.player.setSneaking(false);
         }
