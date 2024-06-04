@@ -1,5 +1,6 @@
 package me.gravityio.itemio;
 
+import com.google.common.base.Predicates;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
@@ -25,6 +26,19 @@ public class ScreenHandlerHelper {
     public static Predicate<Slot> CONTAINER_SLOTS_ONLY = slot -> !(slot.inventory instanceof PlayerInventory);
     public static Predicate<Slot> PLAYER_SLOTS_ONLY = slot -> (slot.inventory instanceof PlayerInventory);
 
+    /**
+     * Returns a predicate based on the given inventory type.
+     *
+     * @param  type  the inventory type (PLAYER or OTHER)
+     * @return       a predicate that filters slots based on the inventory type
+     */
+    public static Predicate<Slot> getPredicate(InventoryType type) {
+        return switch (type) {
+            case PLAYER -> PLAYER_SLOTS_ONLY;
+            case OTHER -> CONTAINER_SLOTS_ONLY;
+        };
+    }
+
     /*
       When you send the slot the player clicked to the server, you
       don't actually send the index of the slot that starts from hotbar -> player inventory -> opened inventory.<br>
@@ -48,21 +62,45 @@ public class ScreenHandlerHelper {
                 || slot instanceof CraftingResultSlot;
     }
 
+    /**
+     * Retrieves a list of slots from the given screen handler that satisfy the specified predicate.
+     *
+     * @param  handler     the screen handler from which to retrieve the slots
+     * @param  predicate   the predicate used to filter the slots
+     * @return             a list of slots that satisfy the predicate
+     */
     public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> predicate) {
+        return getPredicateSlots(handler, predicate, Predicates.alwaysFalse());
+    }
+
+    /**
+     * Retrieves a list of slots from the given screen handler that satisfy the specified predicates.
+     *
+     * @param  handler       the screen handler from which to retrieve the slots
+     * @param  shouldAdd     the predicate used to filter the slots to be added to the list
+     * @param  shouldReturn  the predicate used to determine when to stop adding slots to the list
+     * @return               a list of slots that satisfy the predicates
+     */
+    public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> shouldAdd, Predicate<Slot> shouldReturn) {
         List<Slot> slots = new ArrayList<>();
         for (Slot slot : handler.slots) {
-            if (!predicate.test(slot)) continue;
+            if (!shouldAdd.test(slot)) continue;
             slots.add(slot);
+            if (shouldReturn.test(slot)) break;
         }
         return slots;
     }
 
+    /**
+     * Retrieves the first slot from the given screen handler that satisfies the specified predicate.
+     *
+     * @param  handler     the screen handler from which to retrieve the slot
+     * @param  predicate   the predicate used to filter the slot
+     * @return             the first slot that satisfies the predicate
+     */
     public static Slot getPredicateSlot(ScreenHandler handler, Predicate<Slot> predicate) {
-        for (Slot slot : handler.slots) {
-            if (!predicate.test(slot)) continue;
-            return slot;
-        }
-        return null;
+        List<Slot> slots = getPredicateSlots(handler,predicate, Predicates.alwaysTrue());
+        return slots.isEmpty() ? null : slots.get(0);
     }
 
     /**
@@ -84,18 +122,27 @@ public class ScreenHandlerHelper {
         return -1;
     }
 
+    /**
+     * Returns a list of empty slots in the specified screen handler and inventory type.
+     *
+     * @param handler the screen handler to search for empty slots
+     * @param type    the inventory type to filter the slots
+     * @return a list of empty slots
+     */
     private static List<Slot> getEmptySlots(ScreenHandler handler, InventoryType type) {
-        return switch (type) {
-            case PLAYER -> getPredicateSlots(handler, slot -> PLAYER_SLOTS_ONLY.test(slot) && !slot.hasStack());
-            case OTHER -> getPredicateSlots(handler, slot -> CONTAINER_SLOTS_ONLY.test(slot) && !slot.hasStack());
-        };
+        return getEmptySlots(handler, type, Predicates.alwaysTrue());
     }
 
+    /**
+     * Returns a list of empty slots in the specified screen handler and inventory type.
+     *
+     * @param handler the screen handler to search for empty slots
+     * @param type    the inventory type to filter the slots
+     * @param predicate the predicate used to filter the slots
+     * @return a list of empty slots
+     */
     private static List<Slot> getEmptySlots(ScreenHandler handler, InventoryType type, Predicate<Slot> predicate) {
-        return switch (type) {
-            case PLAYER -> getPredicateSlots(handler, slot -> PLAYER_SLOTS_ONLY.test(slot) && !slot.hasStack() && predicate.test(slot));
-            case OTHER -> getPredicateSlots(handler, slot -> CONTAINER_SLOTS_ONLY.test(slot) && !slot.hasStack() && predicate.test(slot));
-        };
+        return getPredicateSlots(handler, getPredicate(type).and(slot -> !slot.hasStack() && predicate.test(slot)));
     }
 
     /**
@@ -107,8 +154,8 @@ public class ScreenHandlerHelper {
      */
     private static int getEmptySlotID(ScreenHandler handler, InventoryType type) {
         List<Slot> slots = switch (type) {
-            case PLAYER -> getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
-            case OTHER -> getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
+            case PLAYER -> getPredicateSlots(handler, PLAYER_SLOTS_ONLY);
+            case OTHER -> getPredicateSlots(handler, CONTAINER_SLOTS_ONLY);
         };
 
         for (Slot slot : slots) {
@@ -156,6 +203,12 @@ public class ScreenHandlerHelper {
         return -1;
     }
 
+    public static int findSlotID(int slotID, ScreenHandler handler, InventoryType type) {
+        Predicate<Slot> predicate = getPredicate(type).and(slot -> slot.id == slotID);
+        Slot found = getPredicateSlot(handler, predicate);
+        return found != null ? found.id : -1;
+    }
+
     /**
      * Finds the slot ID of the given searchStack in the specified ScreenHandler.
      *
@@ -178,12 +231,7 @@ public class ScreenHandlerHelper {
      * @return the slot ID of the found ItemStack, or -1 if not found
      */
     public static int findSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type, BiPredicate<ItemStack, ItemStack> equalPredicate) {
-        List<Slot> slots = new ArrayList<>();
-        if (type == InventoryType.OTHER) {
-            slots = getPredicateSlots(handler, slot -> !(slot.inventory instanceof PlayerInventory));
-        } else if (type == InventoryType.PLAYER) {
-            slots = getPredicateSlots(handler, slot -> slot.inventory instanceof PlayerInventory);
-        }
+        List<Slot> slots = getPredicateSlots(handler, getPredicate(type));
 
         for (Slot slot : slots) {
             if (!equalPredicate.test(slot.getStack(), searchStack)) continue;
@@ -299,6 +347,15 @@ public class ScreenHandlerHelper {
 //        Helper.leftClickSlot(manager, player, splitSlotId);
 //    }
 
+    /**
+     * Splits the stack in a player's inventory at a specified slot into smaller stacks of a given size.
+     *
+     * @param  manager    the client player interaction manager
+     * @param  player     the player whose inventory is being modified
+     * @param  splitSlotId    the ID of the slot containing the stack to be split
+     * @param  newSize    the desired size of each smaller stack
+     * @return            an array of slots containing the smaller stacks, or null if there are not enough empty slots
+     */
     public static Slot[] splitStackQuickCraft(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
         var handler = player.currentScreenHandler;
         int count = getCountAt(handler, splitSlotId);
@@ -373,7 +430,7 @@ public class ScreenHandlerHelper {
         var stackCount = getCountAt(player.currentScreenHandler, clickSlotId);
         if (stackCount == target) return false;
 
-        var splitCount = Helper.simulateRightClick(player, clickSlotId).getLeft().getCount();
+        var splitCount = Helper.simulateRightClick(player, clickSlotId).click().getCount();
         int a = Math.abs(splitCount - target);
         int b = Math.abs(stackCount - target);
         return a < b;
@@ -440,7 +497,6 @@ public class ScreenHandlerHelper {
 //            steps++;
 //        }
 //    }
-
 
     public enum InventoryType {
         PLAYER, OTHER

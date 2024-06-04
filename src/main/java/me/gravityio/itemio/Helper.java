@@ -1,8 +1,6 @@
 package me.gravityio.itemio;
 
-import net.minecraft.block.SignBlock;
 import net.minecraft.block.WallSignBlock;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -11,8 +9,6 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.state.property.Properties;
-import net.minecraft.state.property.Property;
-import net.minecraft.util.Pair;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -69,13 +65,6 @@ public class Helper {
         return bytes;
     }
 
-    /**
-     * Checks if the given hit result is an inventory block in the world.
-     *
-     * @param world     the world in which the hit result occurred
-     * @param hitResult the hit result to check
-     * @return true if the hit result corresponds to an inventory block, false otherwise
-     */
     public static boolean isInventory(World world, HitResult hitResult) {
         if (hitResult.getType() != HitResult.Type.BLOCK) return false;
         var blockHit = (BlockHitResult) hitResult;
@@ -111,14 +100,14 @@ public class Helper {
      * @param manager     the client player interaction manager
      * @param player      the player entity
      * @param clickSlotId the ID of the clicked slot
-     * @return a pair containing the clicked item stack and the cursor item stack
+     * @return the clicked item stack and the cursor item stack
      */
-    public static Pair<ItemStack, ItemStack> leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
+    public static ClickData leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
         var screen = player.currentScreenHandler;
         manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
         var click = screen.getSlot(clickSlotId).getStack().copy();
         var cursor = screen.getCursorStack().copy();
-        return new Pair<>(click, cursor);
+        return new ClickData(click, cursor);
     }
 
     public static void quickcraftSlots(ClientPlayerInteractionManager manager, PlayerEntity player, Slot[] clickSlots, int button) {
@@ -138,14 +127,14 @@ public class Helper {
      * @param manager     the client player interaction manager
      * @param player      the player entity
      * @param clickSlotId the ID of the clicked slot
-     * @return a Pair object containing the clicked ItemStack and the cursor ItemStack
+     * @return the clicked item stack and the cursor item stack
      */
-    public static Pair<ItemStack, ItemStack> rightClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
+    public static ClickData rightClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
         var screen = player.currentScreenHandler;
         manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_2, SlotActionType.PICKUP, player);
         var click = screen.getSlot(clickSlotId).getStack().copy();
         var cursor = screen.getCursorStack().copy();
-        return new Pair<>(click, cursor);
+        return new ClickData(click, cursor);
     }
 
     /**
@@ -173,14 +162,7 @@ public class Helper {
         manager.clickSlot(player.currentScreenHandler.syncId, fromSlotId, toSlotId, SlotActionType.SWAP, player);
     }
 
-    /**
-     * Simulates a right click action by a player.
-     *
-     * @param player      the player entity performing the right click
-     * @param clickSlotId the slot ID of the clicked item
-     * @return a pair of ItemStacks representing the modified click output and cursor output
-     */
-    public static Pair<ItemStack, ItemStack> simulateRightClick(PlayerEntity player, int clickSlotId) {
+    public static ClickData simulateLeftClick(PlayerEntity player, int clickSlotId) {
         var screen = player.currentScreenHandler;
         var click = screen.getSlot(clickSlotId).getStack();
         var cursor = screen.getCursorStack();
@@ -191,16 +173,48 @@ public class Helper {
             clickOut = click.copy();
             cursorOut = click.copy();
             clickOut.setCount(click.getCount() / 2);
-            cursorOut.setCount((click.getCount() + 1) / 2);
+            cursorOut.setCount(click.getCount() / 2 + 1);
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.canCombine(screen.getSlot(clickSlotId).getStack(), cursor)) {
+            if (ItemStack.canCombine(click, cursor)) {
                 cursorOut.decrement(1);
                 clickOut.increment(1);
             }
         }
-        return new Pair<>(clickOut, cursorOut);
+        return new ClickData(clickOut, cursorOut);
     }
+
+    /**
+     * Simulates a right click action by a player.
+     *
+     * @param player      the player entity performing the right click
+     * @param clickSlotId the slot ID of the clicked item
+     * @return the item stack obtained from the clicked slot
+     */
+    public static ClickData simulateRightClick(PlayerEntity player, int clickSlotId) {
+        var screen = player.currentScreenHandler;
+        var click = screen.getSlot(clickSlotId).getStack();
+        var cursor = screen.getCursorStack();
+
+        ItemStack clickOut;
+        ItemStack cursorOut;
+        if (cursor.isEmpty()) {
+            clickOut = click.copy();
+            cursorOut = click.copy();
+            clickOut.setCount(click.getCount() / 2);
+            cursorOut.setCount(click.getCount() / 2 + 1);
+        } else {
+            clickOut = click.copy();
+            cursorOut = cursor.copy();
+            if (ItemStack.canCombine(click, cursor)) {
+                cursorOut.decrement(1);
+                clickOut.increment(1);
+            }
+        }
+        return new ClickData(clickOut, cursorOut);
+    }
+
+    public static record ClickData(ItemStack click, ItemStack cursor) {}
 
 }
