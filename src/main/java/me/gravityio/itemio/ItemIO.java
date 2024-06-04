@@ -37,10 +37,7 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class ItemIO implements ClientModInitializer {
     public static final String MOD_ID = "itemio";
@@ -68,7 +65,8 @@ public class ItemIO implements ClientModInitializer {
     public int slotIndex;
     private int splitCount;
     private Iterator<Integer> splitSlotIndexArray;
-    private boolean isStoreDown = false;
+    private boolean isStoreDown;
+    private boolean invalid;
 
     // TODO: Add an option to restock the item you just put in an inventory?
     // TODO: WARNING TEXT AS YOUR DOING THE THING
@@ -220,6 +218,15 @@ public class ItemIO implements ClientModInitializer {
     private void tickItemIO(MinecraftClient client) {
         var hit = Helper.getLookingAtInventory(client);
 
+        if (this.getInvalid(client.world, client.player).isEmpty()) {
+            this.invalid = false;
+        } else {
+            if (!this.invalid) {
+                client.player.sendMessage(Text.translatable(FAR_INVENTORY_KEY), true);
+                this.invalid = true;
+            }
+        }
+
         if (this.waiting || hit == null) {
             return;
         }
@@ -282,18 +289,24 @@ public class ItemIO implements ClientModInitializer {
         this.splitSlotIndexArray = null;
     }
 
-    private void removeInvalid(World world, PlayerEntity player) {
-        var iterator = this.inventoryBlocks.iterator();
-        var hadSomeTooFar = false;
-        while (iterator.hasNext()) {
-            BlockRec blockRec = iterator.next();
+    private List<BlockRec> getInvalid(World world, PlayerEntity player) {
+        List<BlockRec> invalid = new ArrayList<>();
+        for (BlockRec blockRec : this.inventoryBlocks) {
             BlockPos pos = blockRec.pos();
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (!blockRec.isTooFar(player) && blockEntity instanceof Inventory) continue;
+            invalid.add(blockRec);
+        }
+        return invalid;
+    }
+
+    private void removeInvalid(World world, PlayerEntity player) {
+        var hadSomeTooFar = false;
+        for (BlockRec blockRec : this.getInvalid(world, player)) {
+            this.inventoryBlocks.remove(blockRec);
             Vec3d particlePos = blockRec.getParticlePosition();
             player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
             DEBUG("Removing '{}'", blockRec.pos().toShortString());
-            iterator.remove();
             hadSomeTooFar = true;
         }
         if (hadSomeTooFar) {
