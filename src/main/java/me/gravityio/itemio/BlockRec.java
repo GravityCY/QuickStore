@@ -36,7 +36,7 @@ public record BlockRec(BlockPos pos, Direction side) {
         return Objects.hash(pos);
     }
 
-    public BlockHitResult toRaycast() {
+    public BlockHitResult toBlockHitResult() {
         return new BlockHitResult(pos.toCenterPos(), side, pos, false);
     }
 

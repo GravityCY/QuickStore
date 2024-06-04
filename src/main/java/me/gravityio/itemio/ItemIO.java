@@ -69,7 +69,6 @@ public class ItemIO implements ClientModInitializer {
     private boolean invalid;
 
     // TODO: Add an option to restock the item you just put in an inventory?
-    // TODO: WARNING TEXT AS YOUR DOING THE THING
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -322,7 +321,7 @@ public class ItemIO implements ClientModInitializer {
 
     private void sendOpenScreenPacket(MinecraftClient client, BlockRec rec) {
         DEBUG("Sending open screen packet for '{}'", rec.pos().toShortString());
-        client.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND, rec.toRaycast(), 6969));
+        client.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND, rec.toBlockHitResult(), 6969));
     }
 
     private void onScreenFullyOpened(MinecraftClient client, ScreenHandler handler) {
