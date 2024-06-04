@@ -69,8 +69,8 @@ public class ItemIO implements ClientModInitializer {
     // TODO: We render on the side that was looked at as the bind was down, what this means is that with chests
     //  placed next to each other, and you hover from chest a to chest b, you can click their sides on the way there, which renders the item inside a chest.
     //  Fix: Detect when the block on a side is not air (or 1x1x1) and fallback to the opposite of the facing direction of the player?
-
     // TODO: Add an option to restock the item you just put in an inventory?
+    // TODO: When you click the side of a sign it saves that side in the BlockRec meaning it would show the item on that side
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
