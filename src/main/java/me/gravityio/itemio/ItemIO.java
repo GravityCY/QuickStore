@@ -100,9 +100,9 @@ public class ItemIO implements ClientModInitializer {
         STORE.onPressed(() -> {
             if (ModConfig.HANDLER.instance().toggle_bind) {
                 if (!this.isStoreDown) {
-                    var hit = client.getCameraEntity().raycast(5, 0, false);
-                    if (!Helper.isInventory(client.world, hit)) return;
-                    client.player.sendMessage(Text.translatable("messages.itemio.toggle"), true);
+                    if (Helper.getLookingAtInventory(client) == null) return;
+
+                    client.player.sendMessage(Text.translatable(TOGGLE_KEY), true);
                 }
                 this.isStoreDown = !this.isStoreDown;
                 if (!this.isStoreDown) {
@@ -136,8 +136,7 @@ public class ItemIO implements ClientModInitializer {
         if (this.waiting) return;
 
         if (ModConfig.HANDLER.instance().need_look_at_container) {
-            var hit = client.getCameraEntity().raycast(5, 0, false);
-            if (!Helper.isInventory(client.world, hit)) return;
+            if (Helper.getLookingAtInventory(client) == null) return;
         }
 
         ItemStack item = client.player.getMainHandStack();
@@ -220,8 +219,8 @@ public class ItemIO implements ClientModInitializer {
         }
     }
 
-    private void whileStorePressed(MinecraftClient client) {
-        var hit = client.getCameraEntity().raycast(5, client.getTickDelta(), false);
+    private void tickItemIO(MinecraftClient client) {
+        var hit = Helper.getLookingAtInventory(client);
 
         BlockPos blockPos = Helper.getInventory(client.world, hit);
         if (this.waiting || blockPos == null) {
@@ -244,8 +243,8 @@ public class ItemIO implements ClientModInitializer {
         }
 
         if (ModConfig.HANDLER.instance().need_look_at_container) {
-            var hit = client.getCameraEntity().raycast(5, 0, false);
-            if (!Helper.isInventory(client.world, hit)) {
+            BlockHitResult hit = Helper.getLookingAtInventory(client);
+            if (hit == null) {
                 this.clear();
                 return;
             }

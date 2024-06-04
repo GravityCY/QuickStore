@@ -1,17 +1,19 @@
 package me.gravityio.itemio;
 
 import net.minecraft.block.WallSignBlock;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.state.property.Properties;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import org.lwjgl.glfw.GLFW;
 
@@ -65,32 +67,34 @@ public class Helper {
         return bytes;
     }
 
-    public static boolean isInventory(World world, HitResult hitResult) {
+    public static BlockHitResult raycast(Entity entity, float tickDelta, float maxDistance) {
+        World world = entity.getWorld();
+        Vec3d cameraPos = entity.getCameraPosVec(tickDelta);
+        Vec3d cameraForward = entity.getRotationVec(tickDelta);
+
+        Vec3d cameraEnd = cameraPos.add(cameraForward.x * maxDistance, cameraForward.y * maxDistance, cameraForward.z * maxDistance);
+        return world.raycast(new PredicateRaycastContext(
+                cameraPos, cameraEnd,
+                RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE,
+                entity,
+                (w, p) -> w.getBlockState(p).getBlock() instanceof WallSignBlock
+        ));
+    }
+
+    /**
+     * Gets the inventory the player is looking at
+     */
+    public static BlockHitResult getLookingAtInventory(MinecraftClient client) {
+        var hit = Helper.raycast(client.cameraEntity, client.getTickDelta(), client.interactionManager.getReachDistance());
+        if (!Helper.isInventory(client.world, hit)) {
+            return null;
+        }
+        return hit;
+    }
+
+    public static boolean isInventory(World world, BlockHitResult hitResult) {
         if (hitResult.getType() != HitResult.Type.BLOCK) return false;
-        var blockHit = (BlockHitResult) hitResult;
-        return isInventory(world, blockHit.getBlockPos());
-    }
-
-    public static boolean isInventory(World world, BlockPos blockPos) {
-        var blockState = world.getBlockState(blockPos);
-        if (blockState.getBlock() instanceof WallSignBlock) {
-            return isInventory(world, blockPos.offset(blockState.get(Properties.HORIZONTAL_FACING).getOpposite(), 1));
-        }
-        return world.getBlockEntity(blockPos) instanceof Inventory;
-    }
-
-    public static BlockPos getInventory(World world, HitResult hitResult) {
-        if (hitResult.getType() != HitResult.Type.BLOCK) return null;
-        var blockHit = (BlockHitResult) hitResult;
-        return getInventory(world, blockHit.getBlockPos());
-    }
-
-    public static BlockPos getInventory(World world, BlockPos pos) {
-        var blockState = world.getBlockState(pos);
-        if (blockState.getBlock() instanceof WallSignBlock) {
-            return getInventory(world, pos.offset(blockState.get(Properties.HORIZONTAL_FACING).getOpposite(), 1));
-        }
-        return world.getBlockEntity(pos) == null ? null : pos;
+        return world.getBlockEntity(hitResult.getBlockPos()) instanceof Inventory;
     }
 
     /**
