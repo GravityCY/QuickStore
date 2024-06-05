@@ -70,9 +70,9 @@ public class ModConfig {
     }
 
     @SerialEntry
-    public boolean need_look_at_container = true;
+    public boolean need_look_at_container = false;
     @SerialEntry
-    public boolean toggle_bind = true;
+    public boolean toggle_bind = false;
     @SerialEntry
     public boolean animate_item = true;
     @SerialEntry

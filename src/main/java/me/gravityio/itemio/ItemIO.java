@@ -52,6 +52,7 @@ public class ItemIO implements ClientModInitializer {
 
     private static final KeybindWrapper STORE = KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name");
     private static final KeybindWrapper INCREMENT = KeybindWrapper.of("key.itemio.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.itemio.name");
+    public static final int TIMEOUT = 500;
 
     public static boolean IS_DEBUG;
     public static ItemIO INSTANCE;
@@ -67,6 +68,7 @@ public class ItemIO implements ClientModInitializer {
     private Iterator<Integer> splitSlotIndexArray;
     private boolean isStoreDown;
     private boolean invalid;
+    private long startWaiting;
 
     // TODO: Add an option to restock the item you just put in an inventory?
 
@@ -101,7 +103,7 @@ public class ItemIO implements ClientModInitializer {
                 }
                 this.isStoreDown = !this.isStoreDown;
                 if (!this.isStoreDown) {
-                    this.onReleaseStore(client);
+                    this.onReleaseIO(client);
                 }
             } else {
                 this.isStoreDown = true;
@@ -112,7 +114,7 @@ public class ItemIO implements ClientModInitializer {
             if (ModConfig.HANDLER.instance().toggle_bind) return;
 
             this.isStoreDown = false;
-            this.onReleaseStore(client);
+            this.onReleaseIO(client);
         });
 
         ModEvents.ON_KEY.register((key, scancode, action, modifiers) -> {
@@ -227,6 +229,9 @@ public class ItemIO implements ClientModInitializer {
         }
 
         if (this.waiting || hit == null) {
+            if (this.waiting && (System.currentTimeMillis() - this.startWaiting) > TIMEOUT) {
+                this.clear();
+            }
             return;
         }
 
@@ -239,7 +244,7 @@ public class ItemIO implements ClientModInitializer {
         client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, client.world.random.nextFloat() + 0.5f);
     }
 
-    private void onReleaseStore(MinecraftClient client) {
+    private void onReleaseIO(MinecraftClient client) {
         if (this.waiting) {
             return;
         }
@@ -252,6 +257,7 @@ public class ItemIO implements ClientModInitializer {
             }
         }
 
+        this.startWaiting = System.currentTimeMillis();
         this.removeInvalid(client.world, client.player);
         this.heldStack = client.player.getMainHandStack().copy();
         this.inventoryBlockIterator = this.inventoryBlocks.iterator();
