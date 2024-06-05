@@ -9,7 +9,7 @@
   "yacl.itemio.title": "ItemIO",
 
   "yacl.itemio.toggle_bind.label": "Toggle Bind",
-  "yacl.itemio.toggle_bind.desc": "Whether to toggle the bind.",
+  "yacl.itemio.toggle_bind.desc": "Whether to toggle the bind.\n\n§lTip for Toggle Mode: §7You can cancel a selection with the `Escape` key",
 
   "yacl.itemio.look_container.label": "Need to Look at Container",
   "yacl.itemio.look_container.desc": "Whether you need to look at a container in order to be able to do operations.",
