@@ -1,4 +1,3 @@
-
 plugins {
     id "fabric-loom" version "1.4-SNAPSHOT"
     id "maven-publish"
@@ -54,7 +53,7 @@ tasks.register('publishCurseForge', net.darkhax.curseforgegradle.TaskPublishCurs
     group = "publishing"
     apiToken = System.getenv("CURSEFORGE_UPLOAD")
 
-    def mainFile = upload(-1, remapJar)
+    def mainFile = upload(1031152, remapJar)
     mainFile.changelog = changelog
     supportedVersions.each {
         mainFile.addGameVersion(it)
