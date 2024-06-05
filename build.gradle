@@ -1,8 +1,20 @@
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
+
 plugins {
     id "fabric-loom" version "1.4-SNAPSHOT"
-    id "maven-publish"
     id "com.modrinth.minotaur" version "2.+"
     id 'net.darkhax.curseforgegradle' version "1.1.24"
+    id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
+}
+
+replacement {
+    fileName = "README.md"
+    types = ["modrinth", "curseforge"]
+    values = [
+            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
+            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
+            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
+    ]
 }
 
 version = project.mod_version
@@ -47,7 +59,7 @@ tasks.register("publishMod") {
     dependsOn "modrinth"
 }
 
-tasks.register('publishCurseForge', net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
     disableVersionDetection()
 
     group = "publishing"
@@ -86,15 +98,15 @@ modrinth {
 
 processResources  {
     def modProperties = [
-            "mod_id": project.mod_id,
-            "mod_name": project.mod_name,
-            "mod_version": project.mod_version,
-            "mod_description": project.mod_description,
-            "mod_author": project.mod_author,
-            "mod_sources": project.mod_sources,
-            "mod_license": project.mod_license,
-            "loader_version": project.loader_version,
-            "minecraft_version": project.minecraft_version
+            "mod_id": mod_id,
+            "mod_name": mod_name,
+            "mod_version": mod_version,
+            "mod_description": mod_description,
+            "mod_author": mod_author,
+            "mod_sources": mod_sources,
+            "mod_license": mod_license,
+            "loader_version": loader_version,
+            "minecraft_version": minecraft_version
     ]
 
     inputs.properties(modProperties)
@@ -119,13 +131,4 @@ jar {
     from("LICENSE") {
         rename { "${it}_${base.archivesName.get()}" }
     }
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
-    repositories {}
 }
