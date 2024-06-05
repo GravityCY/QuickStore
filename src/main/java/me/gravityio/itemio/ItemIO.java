@@ -82,7 +82,7 @@ public class ItemIO implements ClientModInitializer {
         return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keycode);
     }
 
-    // TODO: Add an option to restock the item you just put in an inventory?
+    // TODO: Blur Mod Compatibility stop it from blurring the screen when we do our stuff
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
