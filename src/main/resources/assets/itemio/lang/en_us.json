@@ -33,5 +33,5 @@
   "yacl.itemio.color.b.desc": "The blue part of the color.",
 
   "yacl.itemio.color.a.label": "Alpha",
-  "yacl.itemio.color.a.desc": "How transparent the color should be."
+  "yacl.itemio.color.a.desc": "How transparent the color should be.\n\n§lAny value under 10 for some reason Minecraft doesn't render."
 }
