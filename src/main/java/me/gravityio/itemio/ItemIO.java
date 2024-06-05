@@ -14,6 +14,7 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -51,7 +52,7 @@ public class ItemIO implements ClientModInitializer {
     public static final String TOGGLE_KEY = "messages.itemio.toggle";
 
     private static final KeybindWrapper STORE = KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name");
-    private static final KeybindWrapper INCREMENT = KeybindWrapper.of("key.itemio.increment", GLFW.GLFW_KEY_LEFT_SHIFT, "category.itemio.name");
+
     public static final int TIMEOUT = 500;
 
     public static boolean IS_DEBUG;
@@ -61,14 +62,22 @@ public class ItemIO implements ClientModInitializer {
     public BlockRec currentInventoryBlock;
     public Set<BlockRec> inventoryBlocks = new HashSet<>();
     public Iterator<BlockRec> inventoryBlockIterator;
-    public boolean waiting;
-    public boolean increment;
+    private Iterator<Integer> splitSlotIndexArray;
+
     public int slotIndex;
     private int splitCount;
-    private Iterator<Integer> splitSlotIndexArray;
+
+    public boolean waiting;
+    private boolean anyInvalid;
     private boolean isStoreDown;
-    private boolean invalid;
+    public boolean doIncrement;
+    private boolean doRestock;
+
     private long startWaiting;
+
+    public static boolean isKeyPressed(int keycode) {
+        return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keycode);
+    }
 
     // TODO: Add an option to restock the item you just put in an inventory?
 
@@ -220,11 +229,11 @@ public class ItemIO implements ClientModInitializer {
         var hit = Helper.getLookingAtInventory(client);
 
         if (this.getInvalid(client.world, client.player).isEmpty()) {
-            this.invalid = false;
+            this.anyInvalid = false;
         } else {
-            if (!this.invalid) {
+            if (!this.anyInvalid) {
                 client.player.sendMessage(Text.translatable(FAR_INVENTORY_KEY), true);
-                this.invalid = true;
+                this.anyInvalid = true;
             }
         }
 
@@ -264,7 +273,8 @@ public class ItemIO implements ClientModInitializer {
         this.waiting = true;
         this.slotIndex = client.player.getInventory().selectedSlot;
         this.splitCount = (int) Math.floor((double) this.heldStack.getCount() / this.inventoryBlocks.size());
-        this.increment = INCREMENT.isPressed();
+        this.doIncrement = isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT);
+        this.doRestock = isKeyPressed(GLFW.GLFW_KEY_LEFT_ALT);
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
@@ -285,13 +295,15 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void clear() {
-        this.waiting = false;
-        this.increment = false;
+        this.heldStack = null;
+        this.currentInventoryBlock = null;
         this.inventoryBlocks.clear();
         this.inventoryBlockIterator = null;
-        this.currentInventoryBlock = null;
-        this.heldStack = null;
         this.splitSlotIndexArray = null;
+
+        this.waiting = false;
+        this.doIncrement = false;
+        this.doRestock = false;
     }
 
     private List<BlockRec> getInvalid(World world, PlayerEntity player) {
@@ -362,16 +374,16 @@ public class ItemIO implements ClientModInitializer {
             if (!ItemStack.areEqual(this.heldStack, client.player.getMainHandStack())) {
                 client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
             }
-            if (INCREMENT.isPressed()) {
+            if (this.doIncrement) {
                 client.player.getInventory().scrollInHotbar(-1);
             }
-//            if (client.player.getMainHandStack().isEmpty()) {
-//                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::canCombine);
-//                DEBUG("Found slot of item {} at {}", this.heldStack, foundSlotId);
-//                if (foundSlotId != -1) {
-//                    Helper.swapSlot(client.interactionManager, client.player, foundSlotId, this.slotIndex);
-//                }
-//            }
+            if (this.doRestock && client.player.getMainHandStack().isEmpty()) {
+                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::canCombine);
+                DEBUG("Found slot of item {} at {}", this.heldStack, foundSlotId);
+                if (foundSlotId != -1) {
+                    Helper.swapSlot(client.interactionManager, client.player, foundSlotId, this.slotIndex);
+                }
+            }
             this.clear();
         } else {
             this.sendOpenScreenPacket(client, this.currentInventoryBlock);
