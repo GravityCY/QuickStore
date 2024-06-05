@@ -74,7 +74,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     mainFile.addEnvironment("Client", "Server")
     mainFile.addModLoader("Fabric")
     mainFile.releaseType = "release"
-    mainFile.addJavaVersion("Java 17")
+    mainFile.addJavaVersion("Java 21")
     mainFile.addRequirement("fabric-api")
     mainFile.addRequirement("yacl")
     mainFile.addOptional("modmenu")
@@ -117,14 +117,14 @@ processResources  {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 17
+    it.options.release = 21
 }
 
 java {
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
