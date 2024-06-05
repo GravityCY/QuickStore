@@ -83,6 +83,7 @@ public class ItemIO implements ClientModInitializer {
     }
 
     // TODO: Blur Mod Compatibility stop it from blurring the screen when we do our stuff
+    // TODO: IRIS Mod Compatibility shaders
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
