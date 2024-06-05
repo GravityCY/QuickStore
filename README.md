@@ -1,33 +1,37 @@
 # ItemIO
-A Fabric mod to allow for easy storing / extracting out of inventories 
+A Fabric mod to allow for easy input and output into and out of inventories 
 without needing to open their inventories.
 
-### Storing
-Hold an item, click the keybind (*default:`z`*), and it will put that item 
-in the inventory you're looking at!
+**Requires [FAPI](${fabric_api_url}) and [YACL](${yacl_url})**\
+**Recommends [Modmenu](${modmenu_url})**\
+**Need on Client: ✅  Need on Server: ❌**
 
-https://github.com/GravityCY/QuickStore/assets/49225419/c99282d1-576f-4dc5-9183-b87f6c94029c
+*Splitting among containers while holding the `Increment` modifier. (scrolls your hotbar to the right)*
+![GIF](https://i.ibb.co/7Qrm64j/output.gif)
 
-### Splitting
-Hold an Item, hold the keybind, hover over a bunch of inventories and then 
-release while looking at one of those inventories, this will split your held item evenly
-in each of those inventories!
+## Input
+You want to put something in a container quickly?\
+Just hold the item you 
+want to store, and press the keybind (`v` by default)
+___
+You can also select multiple containers while holding
+the keybind and hovering over the containers you want which
+will subsequently split among the containers.
 
-https://github.com/GravityCY/QuickStore/assets/49225419/56f95929-b814-444c-aad2-c5e3b8db78b1
+## Output
+You want to take an item out of a container?\
+Have an empty hand, and just press the keybind (`v` by default)
+___
+You can also select multiple containers while holding
+the keybind and hovering over the containers you want, which
+will subsequently take an item out of each container
 
-If you're holding the same item as the inventory's output slot it will instead
-of splitting just pull that item into your inventory from each of those inventories 
+## Modifiers
+There are 2 modifiers you can use which can help you in specific cases
 
-### Extracting
-Have an empty hand, click the keybind, and it will pull 1 stack out of the 
-inventory you're looking at! (*tries to prioritize output slots, like the furnace's output slot*)
-
-https://github.com/GravityCY/QuickStore/assets/49225419/2d4adf72-cc41-4725-9bdc-697f0183a010
-
-### Extracting from Multiple
-Have an empty hand, hold the keybind, hover over a bunch of inventories, and then 
-release while looking at one of those inventories, this will pull 1 stack 
-from each of those inventories! (*tries to prioritize output slots, like the furnace's output slot*)
-
-https://github.com/GravityCY/QuickStore/assets/49225419/a51b5166-680d-4290-9746-bc4d6af3d43c
-
+_At the moment the keys cannot be changed_
+___
+### Increment
+Holding `Left Shift` when you do any operation will scroll your hotbar to the next slot
+### Restock
+Holding `Left Alt` when you put an item into a container will restock your hand with the same item
