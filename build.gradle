@@ -71,7 +71,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
         mainFile.addGameVersion(it)
     }
     mainFile.displayName = "${mod_name} ${mod_version}"
-    mainFile.addEnvironment("Client", "Server")
+    mainFile.addEnvironment("Client")
     mainFile.addModLoader("Fabric")
     mainFile.releaseType = "release"
     mainFile.addJavaVersion("Java 17")
