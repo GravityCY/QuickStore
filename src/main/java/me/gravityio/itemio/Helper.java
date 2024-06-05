@@ -85,7 +85,7 @@ public class Helper {
      * Gets the inventory the player is looking at
      */
     public static BlockHitResult getLookingAtInventory(MinecraftClient client) {
-        var hit = Helper.raycast(client.cameraEntity, client.getTickDelta(), client.interactionManager.getReachDistance());
+        var hit = Helper.raycast(client.cameraEntity, client.getTickDelta(), (float) client.player.getBlockInteractionRange());
         if (!Helper.isInventory(client.world, hit)) {
             return null;
         }
@@ -179,7 +179,7 @@ public class Helper {
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.canCombine(click, cursor)) {
+            if (ItemStack.areItemsAndComponentsEqual(click, cursor)) {
                 int total = clickOut.getCount() + cursorOut.getCount();
                 int countClick = Math.min(total, clickOut.getMaxCount());
                 int countCursor = Math.max(total - clickOut.getMaxCount(), 0);
@@ -217,7 +217,7 @@ public class Helper {
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.canCombine(click, cursor)) {
+            if (ItemStack.areItemsAndComponentsEqual(click, cursor)) {
                 cursorOut.decrement(1);
                 clickOut.increment(1);
             }

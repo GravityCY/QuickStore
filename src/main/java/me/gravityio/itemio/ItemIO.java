@@ -350,7 +350,7 @@ public class ItemIO implements ClientModInitializer {
 
         var slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
         var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
-        if (outputSlotId != -1 && (this.heldStack.isEmpty() || ItemStack.canCombine(handler.getSlot(outputSlotId).getStack(), this.heldStack))) {
+        if (outputSlotId != -1 && (this.heldStack.isEmpty() || ItemStack.areItemsAndComponentsEqual(handler.getSlot(outputSlotId).getStack(), this.heldStack))) {
             ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
         } else {
             if (this.heldStack.isEmpty()) {
@@ -381,7 +381,7 @@ public class ItemIO implements ClientModInitializer {
                 client.player.getInventory().scrollInHotbar(-1);
             }
             if (this.doRestock && client.player.getMainHandStack().isEmpty()) {
-                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::canCombine);
+                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::areItemsAndComponentsEqual);
                 DEBUG("Found slot of item {} at {}", this.heldStack, foundSlotId);
                 if (foundSlotId != -1) {
                     Helper.swapSlot(client.interactionManager, client.player, foundSlotId, this.slotIndex);
