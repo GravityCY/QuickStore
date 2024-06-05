@@ -34,4 +34,4 @@ ___
 ### Increment
 Holding `Left Shift` when you do any operation will scroll your hotbar to the next slot
 ### Restock
-Holding `Left Alt` when you put an item into a container will restock your hand with the same item
+Holding `Left Control` when you put an item into a container will restock your hand with the same item

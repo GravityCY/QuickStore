@@ -53,6 +53,9 @@ public class ItemIO implements ClientModInitializer {
 
     private static final KeybindWrapper STORE = KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name");
 
+    private static final int INCREMENT_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_SHIFT;
+    private static final int RESTOCK_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_CONTROL;
+
     public static final int TIMEOUT = 500;
 
     public static boolean IS_DEBUG;
@@ -273,8 +276,8 @@ public class ItemIO implements ClientModInitializer {
         this.waiting = true;
         this.slotIndex = client.player.getInventory().selectedSlot;
         this.splitCount = (int) Math.floor((double) this.heldStack.getCount() / this.inventoryBlocks.size());
-        this.doIncrement = isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT);
-        this.doRestock = isKeyPressed(GLFW.GLFW_KEY_LEFT_ALT);
+        this.doIncrement = isKeyPressed(INCREMENT_MODIFIER_KEY);
+        this.doRestock = isKeyPressed(RESTOCK_MODIFIER_KEY);
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
