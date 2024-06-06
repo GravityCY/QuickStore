@@ -44,36 +44,36 @@ public class ItemIO implements ClientModInitializer {
     public static final String MOD_ID = "itemio";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    public static final ParticleEffect STORE_PARTICLE = ParticleTypes.HAPPY_VILLAGER;
-    public static final ParticleEffect ADD_BLOCK_PARTICLE = ParticleTypes.GLOW;
-    public static final ParticleEffect REMOVE_BLOCK_PARTICLE = ParticleTypes.SMALL_FLAME;
+    private static final ParticleEffect STORE_PARTICLE = ParticleTypes.HAPPY_VILLAGER;
+    private static final ParticleEffect ADD_BLOCK_PARTICLE = ParticleTypes.GLOW;
+    private static final ParticleEffect REMOVE_BLOCK_PARTICLE = ParticleTypes.SMALL_FLAME;
 
-    public static final String FAR_INVENTORY_KEY = "messages.itemio.far_inventory";
-    public static final String TOGGLE_KEY = "messages.itemio.toggle";
+    private static final String FAR_INVENTORY_KEY = "messages.itemio.far_inventory";
+    private static final String TOGGLE_KEY = "messages.itemio.toggle";
 
     private static final KeybindWrapper STORE = KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name");
 
     private static final int INCREMENT_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_SHIFT;
     private static final int RESTOCK_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_CONTROL;
 
-    public static final int TIMEOUT = 500;
+    private static final int TIMEOUT = 500;
 
     public static boolean IS_DEBUG;
     public static ItemIO INSTANCE;
 
-    public ItemStack heldStack = ItemStack.EMPTY;
-    public BlockRec currentInventoryBlock;
-    public Set<BlockRec> inventoryBlocks = new HashSet<>();
-    public Iterator<BlockRec> inventoryBlockIterator;
-    private Iterator<Integer> splitSlotIndexArray;
+    private final Set<BlockRec> inventoryBlocks = new HashSet<>();
+    private ItemStack heldStack = ItemStack.EMPTY;
+    private BlockRec currentInventoryBlock;
+    private Iterator<BlockRec> inventoryBlockIterator;
+    private Iterator<Integer> splitSlotIndexIterator;
 
-    public int slotIndex;
+    private int slotIndex;
     private int splitCount;
 
     public boolean waiting;
     private boolean anyInvalid;
     private boolean isStoreDown;
-    public boolean doIncrement;
+    private boolean doIncrement;
     private boolean doRestock;
 
     private long startWaiting;
@@ -84,6 +84,7 @@ public class ItemIO implements ClientModInitializer {
 
     // TODO: Blur Mod Compatibility stop it from blurring the screen when we do our stuff
     // TODO: IRIS Mod Compatibility shaders
+    // TODO: Bug when we split stuff sometimes it decides to stop in one of the screens with the split items in our own inventory
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -287,7 +288,7 @@ public class ItemIO implements ClientModInitializer {
             int slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER);
             Slot[] slots = ScreenHandlerHelper.splitStackQuickCraft(client.interactionManager, client.player, slotId, splitCount);
             if (slots != null) {
-                this.splitSlotIndexArray = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
+                this.splitSlotIndexIterator = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
             }
         }
 
@@ -303,7 +304,7 @@ public class ItemIO implements ClientModInitializer {
         this.currentInventoryBlock = null;
         this.inventoryBlocks.clear();
         this.inventoryBlockIterator = null;
-        this.splitSlotIndexArray = null;
+        this.splitSlotIndexIterator = null;
 
         this.waiting = false;
         this.doIncrement = false;
@@ -360,8 +361,8 @@ public class ItemIO implements ClientModInitializer {
                     ScreenHandlerHelper.moveToOrShift(client, nonEmptySlotID, slotId);
                 }
             } else {
-                if (this.splitSlotIndexArray != null) {
-                    int splitSlotIndex = this.splitSlotIndexArray.next();
+                if (this.splitSlotIndexIterator != null) {
+                    int splitSlotIndex = this.splitSlotIndexIterator.next();
                     var splitSlotId = ScreenHandlerHelper.findIndexSlotID(splitSlotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
                     Helper.shiftClickSlot(client.interactionManager, client.player, splitSlotId);
                 } else {
@@ -381,6 +382,7 @@ public class ItemIO implements ClientModInitializer {
             if (this.doIncrement) {
                 client.player.getInventory().scrollInHotbar(-1);
             }
+
             if (this.doRestock && client.player.getMainHandStack().isEmpty()) {
                 int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::areItemsAndComponentsEqual);
                 DEBUG("Found slot of item {} at {}", this.heldStack, foundSlotId);
