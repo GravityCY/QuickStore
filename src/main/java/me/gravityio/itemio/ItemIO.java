@@ -82,9 +82,10 @@ public class ItemIO implements ClientModInitializer {
         return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keycode);
     }
 
-    // TODO: Blur Mod Compatibility stop it from blurring the screen when we do our stuff
-    // TODO: IRIS Mod Compatibility shaders
-    // TODO: Bug when we split stuff sometimes it decides to stop in one of the screens with the split items in our own inventory
+    // TODO: Compatibility: Blur Mod Compatibility stop it from blurring the screen when we do our stuff
+    // TODO: Compatibility: IRIS Mod Compatibility shaders
+    // TODO: Bug: when we split stuff sometimes it decides to stop in one of the screens with the split items in our own inventory
+    // TODO: Feature: Ability to select an item stack in your inventory with the keybind when hovering over it
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -160,7 +161,7 @@ public class ItemIO implements ClientModInitializer {
 
         VertexConsumerProvider.Immediate vc = client.getBufferBuilders().getEffectVertexConsumers();
 
-        byte[] rgba = Helper.getBytes(ModConfig.HANDLER.instance().rgba_outline_color, true);
+        byte[] rgba = Helper.getBytes(ModConfig.HANDLER.instance().rgba_outline_color, 4, true);
         int r, g, b, a;
         r = rgba[0] & 0xFF;
         g = rgba[1] & 0xFF;

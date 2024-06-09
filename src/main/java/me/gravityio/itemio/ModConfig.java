@@ -35,21 +35,23 @@ public class ModConfig {
                             .build())
             .build();
 
-    private static Option<Integer>[] getRGBAOptions(int def, Supplier<Integer> rgbaGetter, Consumer<Integer> rgbaSetter) {
-        byte[] rgbaDefaults = Helper.getBytes(def, true);
+    private static Option<Integer>[] getRGBAOptions(String format, int def, Supplier<Integer> rgbaGetter, Consumer<Integer> rgbaSetter) {
+        byte[] rgbaDefaults = Helper.getBytes(def, 4, true);
         char[] rgbaLabels = {'r', 'g', 'b', 'a'};
 
         Option<Integer>[] opts = new Option[4];
         for (int i = 0; i < 4; i++) {
-            int byteIndex = 3 - i;
             char label = rgbaLabels[i];
             int defaultValue = (int) ((rgbaDefaults[i] & 0xFF) / 255f * 100);
 
-            Text name = Text.translatable("yacl.itemio.color." + label + ".label");
-            Text desc = Text.translatable("yacl.itemio.color." + label + ".desc");
+            String key = format.formatted(label);
 
-            Supplier<Integer> getter = () -> (int) ((Helper.getByteAt(rgbaGetter.get(), byteIndex) & 0xFF) / 255f * 100);
-            Consumer<Integer> setter = v -> rgbaSetter.accept(Helper.setByteAt(rgbaGetter.get(), (byte) (v / 100f * 255), byteIndex));
+            Text name = Text.translatable(key + ".label");
+            Text desc = Text.translatable(key + ".desc");
+
+            int byteIndex = i;
+            Supplier<Integer> getter = () -> (int) ((Helper.getByteAt(rgbaGetter.get(), byteIndex, 4, true) & 0xFF) / 255f * 100);
+            Consumer<Integer> setter = v -> rgbaSetter.accept(Helper.setByteAt(rgbaGetter.get(), (byte) (v / 100f * 255), byteIndex, 4, true));
 
             opts[i] = Option.<Integer>createBuilder()
                     .name(name)
@@ -69,15 +71,15 @@ public class ModConfig {
                 .binding(def, getter, setter);
     }
 
-    @SerialEntry
+    @SerialEntry(comment = "Whether you need to look at a container to run an operation.")
     public boolean need_look_at_container = false;
-    @SerialEntry
+    @SerialEntry(comment = "Whether to toggle the bind. Tip for Toggle Mode: You can cancel a selection with the `Escape` key")
     public boolean toggle_bind = false;
-    @SerialEntry
+    @SerialEntry(comment = "Whether to animate item and text.")
     public boolean animate_item = true;
-    @SerialEntry
+    @SerialEntry(comment = "Whether to animate the opacity of the selection.")
     public boolean animate_opacity = true;
-    @SerialEntry
+    @SerialEntry(comment = "The color to overlay over blocks when storing or extracting from an container.")
     public int rgba_outline_color = 0xffffff40;
 
     public boolean getToggleBind() {
@@ -124,7 +126,7 @@ public class ModConfig {
         return YetAnotherConfigLib.create(HANDLER, (defaults, config, builder) -> {
             builder.title(Text.translatable(TITLE));
 
-            Option<Integer>[] outlineColors = getRGBAOptions(defaults.rgba_outline_color, config::getOutlineColor, config::setOutlineColor);
+            Option<Integer>[] outlineColors = getRGBAOptions("yacl.itemio.color.%s", defaults.rgba_outline_color, config::getOutlineColor, config::setOutlineColor);
 
             OptionGroup.Builder group = OptionGroup.createBuilder()
                     .name(Text.translatable("yacl.itemio.group.outline_color.label"))

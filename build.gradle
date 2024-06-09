@@ -34,6 +34,17 @@ base {
 }
 
 repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
     maven {
         name 'Xander Maven'
         url 'https://maven.isxander.dev/releases'
@@ -50,6 +61,7 @@ repositories {
 dependencies {
     modImplementation "dev.isxander:yet-another-config-lib:${yacl_version}-fabric"
     modImplementation "com.terraformersmc:modmenu:${modmenu_version}"
+//    modImplementation "maven.modrinth:iris:1.7.0+1.20.6"
 }
 
 tasks.register("publishMod") {
@@ -71,7 +83,7 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
         mainFile.addGameVersion(it)
     }
     mainFile.displayName = "${mod_name} ${mod_version}"
-    mainFile.addEnvironment("Client", "Server")
+    mainFile.addEnvironment("Client")
     mainFile.addModLoader("Fabric")
     mainFile.releaseType = "release"
     mainFile.addJavaVersion("Java 21")

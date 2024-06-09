@@ -19,50 +19,54 @@ import org.lwjgl.glfw.GLFW;
 
 public class Helper {
 
-    public static byte getByteAt(int value, int index) {
+    public static byte getByteAt(int value, int index, int size, boolean left) {
+        index = left ? size - 1 - index  : index;
         return (byte) ((value >> (index * 8)) & 0xFF);
     }
 
-    public static int setByteAt(int value, byte b, int index) {
+    public static int setByteAt(int value, byte b, int index, int size, boolean left) {
+        index = left ? size - 1 - index  : index;
         int cleared = value & ~(0xFF << (index * 8));
         return cleared | ((b & 0xFF) << (index * 8));
     }
 
-    public static int getInt(byte[] bytes) {
+    public static int getInt(byte[] bytes, int size, boolean left) {
         int ret = 0;
-        for (int i = 0; i < 4; i++) {
-            ret = setByteAt(ret, bytes[i], i);
+        for (int i = 0; i < size; i++) {
+            ret = setByteAt(ret, bytes[i], i, size, left);
         }
         return ret;
     }
 
-    public static int shift(int value, int r, int g, int b, int a) {
+    /**
+     * Gives you a new integer with shifted bytes according to the indices provided by `indexArray`
+     */
+    public static int shift(int value, int... indexArray) {
         int ret = 0;
 
-        ret = setByteAt(ret, getByteAt(value, 0), r);
-        ret = setByteAt(ret, getByteAt(value, 1), g);
-        ret = setByteAt(ret, getByteAt(value, 2), b);
-        ret = setByteAt(ret, getByteAt(value, 3), a);
+        for (int i = 0; i < indexArray.length; i++) {
+            ret = setByteAt(ret, getByteAt(value, i, indexArray.length, false), indexArray[i], indexArray.length, false);
+        }
 
         return ret;
     }
 
-    public static byte[] getBytes(int value, int r, int g, int b, int a) {
-        byte[] bytes = new byte[4];
-        bytes[0] = getByteAt(value, r);
-        bytes[1] = getByteAt(value, g);
-        bytes[2] = getByteAt(value, b);
-        bytes[3] = getByteAt(value, a);
+    public static byte[] getBytes(int value, int... indexArray) {
+        byte[] bytes = new byte[indexArray.length];
+
+        for (int i = 0; i < indexArray.length; i++) {
+            bytes[i] = getByteAt(value, indexArray[i], indexArray.length, false);
+        }
         return bytes;
     }
 
     /**
      * If left is true returns highest to lowest else returns lowest to highest
      */
-    public static byte[] getBytes(int value, boolean left) {
-        byte[] bytes = new byte[4];
-        for (int i = 0; i < 4; i++) {
-            bytes[i] = getByteAt(value, left ? 3 - i : i);
+    public static byte[] getBytes(int value, int size, boolean left) {
+        byte[] bytes = new byte[size];
+        for (int i = 0; i < size; i++) {
+            bytes[i] = getByteAt(value, i, size, left);
         }
         return bytes;
     }
