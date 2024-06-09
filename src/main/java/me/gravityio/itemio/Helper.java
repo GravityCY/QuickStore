@@ -113,10 +113,10 @@ public class Helper {
      * @return the clicked item stack and the cursor item stack
      */
     public static ClickData leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
-        var screen = player.currentScreenHandler;
-        manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
-        var click = screen.getSlot(clickSlotId).getStack().copy();
-        var cursor = screen.getCursorStack().copy();
+        var handler = player.currentScreenHandler;
+        manager.clickSlot(handler.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
+        var click = handler.getSlot(clickSlotId).getStack().copy();
+        var cursor = handler.getCursorStack().copy();
         return new ClickData(click, cursor);
     }
 

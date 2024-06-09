@@ -80,7 +80,7 @@ public class ItemIO implements ClientModInitializer {
     private boolean fromScreen;
     private boolean anyInvalid;
     private boolean isStoreDown;
-    private boolean doIncrement;
+    private boolean doScroll;
     private boolean doRestock;
 
     private long startWaiting;
@@ -122,7 +122,7 @@ public class ItemIO implements ClientModInitializer {
             this.onTick(client);
         });
         ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> {
-            if (!ModConfig.INSTANCE.enable_mod) return;
+            if (!ModConfig.INSTANCE.enable_mod || handler == client.player.playerScreenHandler) return;
             this.onScreenFullyOpened(client, handler);
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> this.clear());
@@ -272,7 +272,6 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void tickItemScreenIO(MinecraftClient client) {
-        DEBUG("Screen is open, running keybind");
         var data = Helper.getHoverStack(client);
         if (data == null) return;
         if (data.slotIndex() >= client.player.getInventory().main.size()) return;
@@ -290,8 +289,6 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void tickItemIO(MinecraftClient client) {
-        DEBUG("Tick itemIO");
-
         var hit = Helper.getLookingAtInventory(client);
 
         if (this.getInvalid(client.world, client.player).isEmpty()) {
@@ -343,7 +340,7 @@ public class ItemIO implements ClientModInitializer {
         this.inventoryBlockIterator = this.inventoryBlocks.iterator();
         this.waiting = true;
         this.splitCount = (int) Math.floor((double) this.heldStack.getCount() / this.inventoryBlocks.size());
-        this.doIncrement = isKeyPressed(INCREMENT_MODIFIER_KEY);
+        this.doScroll = isKeyPressed(INCREMENT_MODIFIER_KEY);
         this.doRestock = isKeyPressed(RESTOCK_MODIFIER_KEY);
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
@@ -353,6 +350,11 @@ public class ItemIO implements ClientModInitializer {
             int slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER);
             Slot[] slots = ScreenHandlerHelper.splitStackQuickCraft(client.interactionManager, client.player, slotId, splitCount);
             if (slots != null) {
+                StringBuilder sb = new StringBuilder(20);
+                for (Slot slot : slots) {
+                    sb.append(slot.getIndex()).append(", ");
+                }
+                DEBUG("Splitting stacks: {}", sb.toString());
                 this.splitSlotIndexIterator = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
             }
         }
@@ -373,7 +375,7 @@ public class ItemIO implements ClientModInitializer {
 
         this.fromScreen = false;
         this.waiting = false;
-        this.doIncrement = false;
+        this.doScroll = false;
         this.doRestock = false;
     }
 
@@ -416,12 +418,15 @@ public class ItemIO implements ClientModInitializer {
     private void onScreenFullyOpened(MinecraftClient client, ScreenHandler handler) {
         if (!this.waiting) return;
 
+        DEBUG("Screen {} fully opened.", handler);
         var slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
         var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
         if (outputSlotId != -1 && (this.heldStack.isEmpty() || ItemStack.areItemsAndComponentsEqual(handler.getSlot(outputSlotId).getStack(), this.heldStack))) {
+            DEBUG("Moving items found in the output slot into our selected slot.");
             ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
         } else {
             if (this.heldStack.isEmpty()) {
+                DEBUG("Moving first found stack to our selected slot.");
                 int nonEmptySlotID = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
                 if (nonEmptySlotID != -1) {
                     ScreenHandlerHelper.moveToOrShift(client, nonEmptySlotID, slotId);
@@ -430,8 +435,10 @@ public class ItemIO implements ClientModInitializer {
                 if (this.splitSlotIndexIterator != null) {
                     int splitSlotIndex = this.splitSlotIndexIterator.next();
                     var splitSlotId = ScreenHandlerHelper.findIndexSlotID(splitSlotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
+                    DEBUG("Quick moving stack we split before at slot index {} and slot id {}.", splitSlotIndex, splitSlotId);
                     Helper.shiftClickSlot(client.interactionManager, client.player, splitSlotId);
                 } else {
+                    DEBUG("Quick moving stack by splitting iteratively.");
                     ScreenHandlerHelper.splitStackShift(client.interactionManager, client.player, slotId, this.splitCount);
                 }
             }
@@ -442,16 +449,19 @@ public class ItemIO implements ClientModInitializer {
         var pos = this.currentInventoryBlock.getParticlePosition();
         client.world.addParticle(STORE_PARTICLE, pos.x, pos.y, pos.z, 0, 0, 0);
         if (!this.nextInventoryBlock()) {
+            DEBUG("All screens have been processed.");
             if (!ItemStack.areEqual(this.heldStack, client.player.getMainHandStack())) {
                 client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
             }
-            if (this.doIncrement) {
+
+            if (this.doScroll) {
+                DEBUG("Scrolling hotbar");
                 client.player.getInventory().scrollInHotbar(-1);
             }
 
             if (this.doRestock && client.player.getMainHandStack().isEmpty()) {
                 int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::areItemsAndComponentsEqual);
-                DEBUG("Found slot of item {} at {}", this.heldStack, foundSlotId);
+                DEBUG("Restocking item {} found at {}", this.heldStack, foundSlotId);
                 if (foundSlotId != -1) {
                     Helper.swapSlot(client.interactionManager, client.player, foundSlotId, this.slotIndex);
                 }
