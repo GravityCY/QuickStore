@@ -7,27 +7,11 @@ plugins {
     id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
 }
 
-replacement {
-    fileName = "README.md"
-    types = ["modrinth", "curseforge"]
-    values = [
-            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
-            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
-            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
-    ]
-}
-
 version = project.mod_version
 group = "me.gravityio"
 
 def changelog = "+ Fixed a bug when splitting items."
 def supportedVersions = ["1.20.5", "1.20.6"]
-
-project.dependencies.add("minecraft", "com.mojang:minecraft:${project.minecraft_version}")
-project.dependencies.add("mappings", "net.fabricmc:yarn:${project.project.yarn_version}:v2")
-project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${project.loader_version}")
-// Optional
-project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
 base {
     archivesName = project.mod_id
@@ -58,10 +42,26 @@ repositories {
     }
 }
 
+project.dependencies.add("minecraft", "com.mojang:minecraft:${project.minecraft_version}")
+project.dependencies.add("mappings", "net.fabricmc:yarn:${project.project.yarn_version}:v2")
+project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${project.loader_version}")
+// Optional
+project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
+
 dependencies {
     modImplementation "dev.isxander:yet-another-config-lib:${yacl_version}-fabric"
     modImplementation "com.terraformersmc:modmenu:${modmenu_version}"
 //    modImplementation "maven.modrinth:iris:1.7.0+1.20.6"
+}
+
+replacement {
+    fileName = "README.md"
+    types = ["modrinth", "curseforge"]
+    values = [
+            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
+            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
+            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
+    ]
 }
 
 tasks.register("publishMod") {
