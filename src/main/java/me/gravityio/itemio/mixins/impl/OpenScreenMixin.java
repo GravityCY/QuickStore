@@ -17,4 +17,5 @@ public class OpenScreenMixin {
         if (!ItemIO.INSTANCE.waiting || !(screen instanceof HandledScreen<?>)) return;
         ci.cancel();
     }
+
 }
