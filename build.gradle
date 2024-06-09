@@ -7,20 +7,10 @@ plugins {
     id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
 }
 
-replacement {
-    fileName = "README.md"
-    types = ["modrinth", "curseforge"]
-    values = [
-            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
-            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
-            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
-    ]
-}
-
 version = project.mod_version
 group = "me.gravityio"
 
-def changelog = "+ Release!"
+def changelog = "+ Fixed a bug when splitting items."
 def supportedVersions = ["1.20", "1.20.1"]
 
 project.dependencies.add("minecraft", "com.mojang:minecraft:${project.minecraft_version}")
@@ -51,6 +41,17 @@ dependencies {
     modImplementation "dev.isxander.yacl:yet-another-config-lib-fabric:${yacl_version}"
     modImplementation "com.terraformersmc:modmenu:${modmenu_version}"
 }
+
+replacement {
+    fileName = "README.md"
+    types = ["modrinth", "curseforge"]
+    values = [
+            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
+            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
+            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
+    ]
+}
+
 
 tasks.register("publishMod") {
     group = "publishing"
