@@ -103,7 +103,11 @@ public class ItemIO implements ClientModInitializer {
 
         var client = MinecraftClient.getInstance();
         ClientTickEvents.END_WORLD_TICK.register(w -> this.onTick(client));
-        ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> this.onScreenFullyOpened(client, handler));
+        ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> {
+            if (handler == client.player.playerScreenHandler) return;
+
+            this.onScreenFullyOpened(client, handler);
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> this.clear());
 
         STORE.onPressed(() -> {
