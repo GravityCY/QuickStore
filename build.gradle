@@ -21,7 +21,7 @@ version = project.mod_version
 group = "me.gravityio"
 
 def changelog = "+ Release!"
-def supportedVersions = ["1.20", "1.20.1", "1.20.2", "1.20.3", "1.20.4"]
+def supportedVersions = ["1.20.2", "1.20.3", "1.20.4"]
 
 project.dependencies.add("minecraft", "com.mojang:minecraft:${project.minecraft_version}")
 project.dependencies.add("mappings", "net.fabricmc:yarn:${project.project.yarn_version}:v2")
