@@ -1,7 +1,9 @@
 package me.gravityio.itemio;
 
+import me.gravityio.itemio.mixins.impl.HandledAccessor;
 import net.minecraft.block.WallSignBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -228,6 +230,26 @@ public class Helper {
         }
         return new ClickData(clickOut, cursorOut);
     }
+
+    public static HoverData getHoverStack(MinecraftClient client) {
+        if (!(client.currentScreen instanceof HandledScreen<?> handled)) return null;
+        HandledAccessor accessor = (HandledAccessor) handled;
+        HoverData data = null;
+
+        int mx = (int)(client.mouse.getX() * (double)client.getWindow().getScaledWidth() / (double)client.getWindow().getWidth());
+        int my = (int)(client.mouse.getY() * (double)client.getWindow().getScaledHeight() / (double)client.getWindow().getHeight());
+
+        ScreenHandler handler = handled.getScreenHandler();
+        for (Slot slot : handler.slots) {
+            if (accessor.callIsPointOverSlot(slot, mx, my)) {
+                data = new HoverData(handler, handled, slot, slot.id, slot.getIndex(), slot.getStack(), mx, my);
+                break;
+            }
+        }
+        return data;
+    }
+
+    public record HoverData(ScreenHandler handler, HandledScreen<?> screen, Slot slot, int slotId, int slotIndex, ItemStack stack, int x, int y) {}
 
     /**
      * A record containing the stack you clicked and the stack in your cursor

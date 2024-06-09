@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
@@ -27,7 +28,9 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RotationAxis;
@@ -51,7 +54,10 @@ public class ItemIO implements ClientModInitializer {
     private static final String FAR_INVENTORY_KEY = "messages.itemio.far_inventory";
     private static final String TOGGLE_KEY = "messages.itemio.toggle";
 
-    private static final KeybindWrapper STORE = KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name");
+    private static final KeybindWrapper STORE = Util.make(
+            KeybindWrapper.of("key.itemio.store", GLFW.GLFW_KEY_V, "category.itemio.name"),
+            bind -> bind.setWorkInScreen(true)
+    );
 
     private static final int INCREMENT_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_SHIFT;
     private static final int RESTOCK_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_CONTROL;
@@ -71,12 +77,17 @@ public class ItemIO implements ClientModInitializer {
     private int splitCount;
 
     public boolean waiting;
+    private boolean fromScreen;
     private boolean anyInvalid;
     private boolean isStoreDown;
     private boolean doIncrement;
     private boolean doRestock;
 
     private long startWaiting;
+
+    public static boolean isInValidScreen(MinecraftClient client) {
+        return client.currentScreen instanceof HandledScreen<?> && client.player.currentScreenHandler == client.player.playerScreenHandler;
+    }
 
     public static boolean isKeyPressed(int keycode) {
         return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keycode);
@@ -103,38 +114,51 @@ public class ItemIO implements ClientModInitializer {
         KeybindManager.init();
 
         ModConfig.HANDLER.load();
+        ModConfig.INSTANCE = ModConfig.HANDLER.instance();
 
         var client = MinecraftClient.getInstance();
-        ClientTickEvents.END_WORLD_TICK.register(w -> this.onTick(client));
-        ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> this.onScreenFullyOpened(client, handler));
+        ClientTickEvents.END_WORLD_TICK.register(w -> {
+            if (!ModConfig.INSTANCE.enable_mod) return;
+            this.onTick(client);
+        });
+        ModEvents.ON_SCREEN_FULLY_OPENED.register(handler -> {
+            if (!ModConfig.INSTANCE.enable_mod) return;
+            this.onScreenFullyOpened(client, handler);
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> this.clear());
 
         STORE.onPressed(() -> {
-            if (ModConfig.HANDLER.instance().toggle_bind) {
-                if (!this.isStoreDown) {
-                    if (Helper.getLookingAtInventory(client) == null) return;
+            if (!ModConfig.INSTANCE.enable_mod) return;
 
-                    client.player.sendMessage(Text.translatable(TOGGLE_KEY), true);
+            if (client.currentScreen != null) {
+                if (ModConfig.INSTANCE.inventory_operations && !this.isStoreDown && isInValidScreen(client)) {
+                    this.tickItemScreenIO(client);
+                    return;
                 }
-                this.isStoreDown = !this.isStoreDown;
-                if (!this.isStoreDown) {
-                    this.onReleaseIO(client);
-                }
+                return;
+            }
+
+            if (ModConfig.INSTANCE.toggle_bind) {
+                this.toggleStoreDown(client);
             } else {
                 this.isStoreDown = true;
             }
         });
 
         STORE.onRelease(() -> {
-            if (ModConfig.HANDLER.instance().toggle_bind) return;
+            if (!ModConfig.INSTANCE.enable_mod) return;
+            if (ModConfig.INSTANCE.toggle_bind) return;
 
             this.isStoreDown = false;
             this.onReleaseIO(client);
         });
 
         ModEvents.ON_KEY.register((key, scancode, action, modifiers) -> {
-            if (this.inventoryBlocks.isEmpty() || key != GLFW.GLFW_KEY_ESCAPE) return false;
+            if (!ModConfig.INSTANCE.enable_mod) return false;
 
+            if (!this.isStoreDown || key != GLFW.GLFW_KEY_ESCAPE) return false;
+
+            client.player.sendMessage(Text.literal("Cancelling").formatted(Formatting.RED), true);
             this.isStoreDown = false;
             this.clear();
             return true;
@@ -142,16 +166,32 @@ public class ItemIO implements ClientModInitializer {
         WorldRenderEvents.END.register((a) -> this.onRender(client));
     }
 
+    private void toggleStoreDown(MinecraftClient client) {
+        if (!this.isStoreDown) {
+            client.player.sendMessage(Text.translatable(TOGGLE_KEY), true);
+        }
+        this.isStoreDown = !this.isStoreDown;
+        if (!this.isStoreDown) {
+            this.onReleaseIO(client);
+        }
+    }
+
     private void onRender(MinecraftClient client) {
+        if (!ModConfig.INSTANCE.enable_mod) return;
         if (this.inventoryBlocks.isEmpty()) return;
         if (client.player == null) return;
         if (this.waiting) return;
 
-        if (ModConfig.HANDLER.instance().need_look_at_container) {
+        if (ModConfig.INSTANCE.need_look_at_container) {
             if (Helper.getLookingAtInventory(client) == null) return;
         }
 
-        ItemStack item = client.player.getMainHandStack();
+        ItemStack item;
+        if (this.fromScreen) {
+            item = client.player.getInventory().main.get(this.slotIndex);
+        } else {
+            item = client.player.getMainHandStack();
+        }
         int split = (int) Math.floor((double) item.getCount() / this.inventoryBlocks.size());
 
         Camera camera = client.gameRenderer.getCamera();
@@ -161,14 +201,14 @@ public class ItemIO implements ClientModInitializer {
 
         VertexConsumerProvider.Immediate vc = client.getBufferBuilders().getEffectVertexConsumers();
 
-        byte[] rgba = Helper.getBytes(ModConfig.HANDLER.instance().rgba_outline_color, 4, true);
+        byte[] rgba = Helper.getBytes(ModConfig.INSTANCE.rgba_outline_color, 4, true);
         int r, g, b, a;
         r = rgba[0] & 0xFF;
         g = rgba[1] & 0xFF;
         b = rgba[2] & 0xFF;
         a = rgba[3] & 0xFF;
 
-        if (ModConfig.HANDLER.instance().animate_opacity && a != 0) {
+        if (ModConfig.INSTANCE.animate_opacity && a != 0) {
             int al = Math.max(a, 30);
             int ah = Math.min(a + 50, 255);
             double p = (Math.sin(System.currentTimeMillis() / 250d) + 1) / 2;
@@ -197,7 +237,7 @@ public class ItemIO implements ClientModInitializer {
 
             if (!item.isEmpty()) {
 
-                if (ModConfig.HANDLER.instance().animate_item) {
+                if (ModConfig.INSTANCE.animate_item) {
                     float s = (float) Math.sin((double) System.currentTimeMillis() / 1000 + block.pos().hashCode()) * 0.1f;
                     matrices.translate(0, s, 0);
                 }
@@ -231,7 +271,27 @@ public class ItemIO implements ClientModInitializer {
         }
     }
 
+    private void tickItemScreenIO(MinecraftClient client) {
+        DEBUG("Screen is open, running keybind");
+        var data = Helper.getHoverStack(client);
+        if (data == null) return;
+        if (data.slotIndex() >= client.player.getInventory().main.size()) return;
+        if (data.slot().inventory != client.player.getInventory()) return;
+
+        DEBUG(String.valueOf(data.slotIndex()));
+        if (ModConfig.INSTANCE.toggle_bind) {
+            this.toggleStoreDown(client);
+        } else {
+            this.isStoreDown = true;
+        }
+        this.fromScreen = true;
+        this.slotIndex = data.slotIndex();
+        client.player.closeHandledScreen();
+    }
+
     private void tickItemIO(MinecraftClient client) {
+        DEBUG("Tick itemIO");
+
         var hit = Helper.getLookingAtInventory(client);
 
         if (this.getInvalid(client.world, client.player).isEmpty()) {
@@ -264,7 +324,7 @@ public class ItemIO implements ClientModInitializer {
             return;
         }
 
-        if (ModConfig.HANDLER.instance().need_look_at_container) {
+        if (ModConfig.INSTANCE.need_look_at_container) {
             BlockHitResult hit = Helper.getLookingAtInventory(client);
             if (hit == null) {
                 this.clear();
@@ -274,10 +334,14 @@ public class ItemIO implements ClientModInitializer {
 
         this.startWaiting = System.currentTimeMillis();
         this.removeInvalid(client.world, client.player);
-        this.heldStack = client.player.getMainHandStack().copy();
+        if (!this.fromScreen) {
+            this.heldStack = client.player.getMainHandStack().copy();
+            this.slotIndex = client.player.getInventory().selectedSlot;
+        } else {
+            this.heldStack = client.player.getInventory().main.get(this.slotIndex).copy();
+        }
         this.inventoryBlockIterator = this.inventoryBlocks.iterator();
         this.waiting = true;
-        this.slotIndex = client.player.getInventory().selectedSlot;
         this.splitCount = (int) Math.floor((double) this.heldStack.getCount() / this.inventoryBlocks.size());
         this.doIncrement = isKeyPressed(INCREMENT_MODIFIER_KEY);
         this.doRestock = isKeyPressed(RESTOCK_MODIFIER_KEY);
@@ -307,6 +371,7 @@ public class ItemIO implements ClientModInitializer {
         this.inventoryBlockIterator = null;
         this.splitSlotIndexIterator = null;
 
+        this.fromScreen = false;
         this.waiting = false;
         this.doIncrement = false;
         this.doRestock = false;
