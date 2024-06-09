@@ -4,7 +4,8 @@ without needing to open their inventories.
 
 **Requires [FAPI](${fabric_api_url}) and [YACL](${yacl_url})**\
 **Recommends [Modmenu](${modmenu_url})**\
-**Need on Client: ✅  Need on Server: ❌**
+**Need on Client: ✅  Need on Server: ❌**\
+**Report any Issues on [GitHub](https://github.com/GravityCY/QuickStore/issues) or my [Discord Server](https://discord.gg/Ef4Z22gnqj)**
 
 *Splitting among containers while holding the `Increment` modifier. (scrolls your hotbar to the right)*
 ![GIF](https://i.ibb.co/7Qrm64j/output.gif)
