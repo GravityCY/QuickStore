@@ -6,6 +6,7 @@ import me.gravityio.itemio.lib.keybind.KeybindWrapper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.BlockEntity;
@@ -185,19 +186,18 @@ public class ItemIO implements ClientModInitializer {
 
             Vec3d targetPosition = block.getParticlePosition();
             Vec3d targetPosition1 = block.pos().toCenterPos();
-            Vec3d transPosition = targetPosition.subtract(camera.getPos());
-            Vec3d transPosition1 = targetPosition1.subtract(camera.getPos());
+            Vec3d textPosition = targetPosition.subtract(camera.getPos());
+            Vec3d cubePosition = targetPosition1.subtract(camera.getPos());
 
-            RenderSystem.enableDepthTest();
 
             VertexConsumer v = vc.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
             matrices.push();
-            matrices.translate(transPosition1.x, transPosition1.y, transPosition1.z);
+            matrices.translate(cubePosition.x, cubePosition.y, cubePosition.z);
             RenderHelper.renderCube(v, matrices.peek().getPositionMatrix(), 0.51f, 0.51f, 0.51f, r, tempG, tempB, a, 0xF000F0);
             matrices.pop();
 
             matrices.push();
-            matrices.translate(transPosition.x, transPosition.y, transPosition.z);
+            matrices.translate(textPosition.x, textPosition.y, textPosition.z);
 
             if (!item.isEmpty()) {
 
@@ -213,16 +213,18 @@ public class ItemIO implements ClientModInitializer {
                 matrices.pop();
 
                 matrices.push();
-                matrices.scale(0.5f, 0.5f, 0.5f);
                 matrices.multiply(camera.getRotation());
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180));
+                matrices.scale(0.5f, 0.5f, 0.5f);
                 RenderHelper.renderText(matrices, client.textRenderer, vc, Text.literal(String.valueOf(split)), 0.5f, 0xffffffff);
                 matrices.pop();
             }
-
             matrices.pop();
-            vc.draw();
-            RenderSystem.disableDepthTest();
         }
+
+        RenderSystem.enableDepthTest();
+        vc.draw();
+        RenderSystem.disableDepthTest();
     }
 
     private void onTick(MinecraftClient client) {

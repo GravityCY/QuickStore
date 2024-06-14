@@ -89,7 +89,7 @@ public class Helper {
      * Gets the inventory the player is looking at
      */
     public static BlockHitResult getLookingAtInventory(MinecraftClient client) {
-        var hit = Helper.raycast(client.cameraEntity, client.getTickDelta(), (float) client.player.getBlockInteractionRange());
+        var hit = Helper.raycast(client.cameraEntity, client.getRenderTickCounter().getTickDelta(true), (float) client.player.getBlockInteractionRange());
         if (!Helper.isInventory(client.world, hit)) {
             return null;
         }
