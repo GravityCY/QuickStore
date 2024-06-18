@@ -26,6 +26,13 @@
   "mixins": [
     "itemio.mixins.json"
   ],
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/Ef4Z22gnqj"
+      }
+    }
+  },
   "depends": {
     "fabricloader": "*",
     "fabric-api": "*",
