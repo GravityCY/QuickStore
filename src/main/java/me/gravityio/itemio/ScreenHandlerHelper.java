@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 public class ScreenHandlerHelper {
 
     public static Predicate<Slot> CONTAINER_SLOTS_ONLY = slot -> !(slot.inventory instanceof PlayerInventory);
-    public static Predicate<Slot> PLAYER_SLOTS_ONLY = slot -> (slot.inventory instanceof PlayerInventory);
+    public static Predicate<Slot> PLAYER_SLOTS_ONLY = slot -> slot.inventory instanceof PlayerInventory;
 
     /**
      * Returns a predicate based on the given inventory type.
@@ -98,8 +98,11 @@ public class ScreenHandlerHelper {
      * @return the first slot that satisfies the predicate
      */
     public static Slot getPredicateSlot(ScreenHandler handler, Predicate<Slot> predicate) {
-        List<Slot> slots = getPredicateSlots(handler, predicate, Predicates.alwaysTrue());
-        return slots.isEmpty() ? null : slots.get(0);
+        for (Slot slot : handler.slots) {
+            if (!predicate.test(slot)) continue;
+            return slot;
+        }
+        return null;
     }
 
     /**

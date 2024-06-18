@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ScreenHandler.class)
 public class ScreenHandlerMixin {
+
     @Inject(method = "updateSlotStacks", at = @At("TAIL"))
     private void itemio$onInit(CallbackInfo ci) {
         ModEvents.ON_SCREEN_FULLY_OPENED.invoker().onOpened((ScreenHandler) (Object) this);

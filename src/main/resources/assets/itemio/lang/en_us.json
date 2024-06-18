@@ -8,6 +8,12 @@
 
   "yacl.itemio.title": "ItemIO",
 
+  "yacl.itemio.enable_mod.label": "Enable Mod",
+  "yacl.itemio.enable_mod.desc": "Whether to enable the mod.",
+
+  "yacl.itemio.inventory_operations.label": "Inventory Operations",
+  "yacl.itemio.inventory_operations.desc": "Whether to enable the functionality to start an operation in the inventory.",
+
   "yacl.itemio.toggle_bind.label": "Toggle Bind",
   "yacl.itemio.toggle_bind.desc": "Whether to toggle the bind.\n\n§lTip for Toggle Mode: §7You can cancel a selection with the `Escape` key",
 
