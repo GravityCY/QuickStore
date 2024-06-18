@@ -3,8 +3,8 @@ package me.gravityio.itemio;
 import com.google.gson.GsonBuilder;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
+import dev.isxander.yacl3.api.controller.ColorControllerBuilder;
 import dev.isxander.yacl3.api.controller.ControllerBuilder;
-import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
@@ -13,8 +13,8 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
+import java.awt.*;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -35,38 +35,13 @@ public class ModConfig {
                             .build())
             .build();
 
-    private static Option<Integer>[] getRGBAOptions(String format, int def, Supplier<Integer> rgbaGetter, Consumer<Integer> rgbaSetter) {
-        byte[] rgbaDefaults = Helper.getBytes(def, 4, true);
-        char[] rgbaLabels = {'r', 'g', 'b', 'a'};
+    private static <T> Option.Builder<T> getOption(String modid, String name, Function<Option<T>, ControllerBuilder<T>> controller, T def, Supplier<T> getter, Consumer<T> setter) {
+        String labelKey = "yacl.%s.%s.label".formatted(modid, name);
+        String descriptionKey = "yacl.%s.%s.desc".formatted(modid, name);
 
-        Option<Integer>[] opts = new Option[4];
-        for (int i = 0; i < 4; i++) {
-            char label = rgbaLabels[i];
-            int defaultValue = (int) ((rgbaDefaults[i] & 0xFF) / 255f * 100);
-
-            String key = format.formatted(label);
-
-            Text name = Text.translatable(key + ".label");
-            Text desc = Text.translatable(key + ".desc");
-
-            int byteIndex = i;
-            Supplier<Integer> getter = () -> (int) ((Helper.getByteAt(rgbaGetter.get(), byteIndex, 4, true) & 0xFF) / 255f * 100);
-            Consumer<Integer> setter = v -> rgbaSetter.accept(Helper.setByteAt(rgbaGetter.get(), (byte) (v / 100f * 255), byteIndex, 4, true));
-
-            opts[i] = Option.<Integer>createBuilder()
-                    .name(name)
-                    .description(OptionDescription.of(desc))
-                    .controller(opt -> IntegerSliderControllerBuilder.create(opt).step(1).range(0, 100))
-                    .binding(defaultValue, getter, setter)
-                    .build();
-        }
-        return opts;
-    }
-
-    private static <T> Option.Builder<T> getOption(String nameKey, String descKey, Function<Option<T>, ControllerBuilder<T>> controller, T def, Supplier<T> getter, Consumer<T> setter) {
         return Option.<T>createBuilder()
-                .name(Text.translatable(nameKey))
-                .description(OptionDescription.of(Text.translatable(descKey)))
+                .name(Text.translatable(labelKey))
+                .description(OptionDescription.of(Text.translatable(descriptionKey)))
                 .controller(controller)
                 .binding(def, getter, setter);
     }
@@ -126,42 +101,51 @@ public class ModConfig {
         return YetAnotherConfigLib.create(HANDLER, (defaults, config, builder) -> {
             builder.title(Text.translatable(TITLE));
 
-            Option<Integer>[] outlineColors = getRGBAOptions("yacl.itemio.color.%s", defaults.rgba_outline_color, config::getOutlineColor, config::setOutlineColor);
+//            Option<Integer>[] outlineColors = getRGBAOptions("yacl.itemio.color.%s", defaults.rgba_outline_color, config::getOutlineColor, config::setOutlineColor);
+//
+//            OptionGroup.Builder group = OptionGroup.createBuilder()
+//                    .name(Text.translatable("yacl.itemio.group.outline_color.label"))
+//                    .description(OptionDescription.of(Text.translatable("yacl.itemio.group.outline_color.desc")))
+//                    .options(List.of(outlineColors));
 
-            OptionGroup.Builder group = OptionGroup.createBuilder()
-                    .name(Text.translatable("yacl.itemio.group.outline_color.label"))
-                    .description(OptionDescription.of(Text.translatable("yacl.itemio.group.outline_color.desc")))
-                    .options(List.of(outlineColors));
-
-            Option.Builder<Boolean> animateOpt = getOption(
-                    "yacl.itemio.animate_opacity.label", "yacl.itemio.animate_opacity.desc",
+            var animateOpt = getOption(
+                    ItemIO.MOD_ID, "animate_opacity",
                     BooleanControllerBuilder::create,
-                    defaults.animate_opacity, config::getAnimateOpacity, config::setAnimateOpacity);
+                    defaults.animate_opacity, config::getAnimateOpacity, config::setAnimateOpacity).build();
 
-            Option.Builder<Boolean> animateItem = getOption(
-                    "yacl.itemio.animate_item.label", "yacl.itemio.animate_item.desc",
+            var animateItem = getOption(
+                    ItemIO.MOD_ID, "animate_item",
                     BooleanControllerBuilder::create,
-                    defaults.animate_item, config::getAnimateItem, config::setAnimateItem);
+                    defaults.animate_item, config::getAnimateItem, config::setAnimateItem).build();
 
-            Option.Builder<Boolean> lookContainer = getOption(
-                    "yacl.itemio.look_container.label", "yacl.itemio.look_container.desc",
+            var lookContainer = getOption(
+                    ItemIO.MOD_ID, "look_container",
                     BooleanControllerBuilder::create,
-                    defaults.need_look_at_container, config::getLookAtContainer, config::setLookAtContainer);
+                    defaults.need_look_at_container, config::getLookAtContainer, config::setLookAtContainer).build();
 
-            Option.Builder<Boolean> toggleBind = getOption(
-                    "yacl.itemio.toggle_bind.label", "yacl.itemio.toggle_bind.desc",
+            var toggleBind = getOption(
+                    ItemIO.MOD_ID, "toggle_bind",
                     BooleanControllerBuilder::create,
-                    defaults.toggle_bind, config::getToggleBind, config::setToggleBind);
+                    defaults.toggle_bind, config::getToggleBind, config::setToggleBind).build();
+
+            var colorOpt = getOption(
+                    ItemIO.MOD_ID, "colour",
+                    option -> ColorControllerBuilder.create(option).allowAlpha(true),
+                    new Color(Helper.reorder(defaults.rgba_outline_color, 3, 0, 1, 2), true), // ARGB
+                    () -> new Color(Helper.reorder(config.rgba_outline_color, 3, 0, 1, 2), true), // ARGB
+                    color -> config.rgba_outline_color = Helper.reorder(color.getRGB(), 1, 2, 3, 0) // RGBA
+            ).build();
 
             var main = ConfigCategory.createBuilder()
                     .name(Text.translatable(TITLE))
-                    .option(toggleBind.build())
-                    .option(lookContainer.build())
-                    .option(animateItem.build())
-                    .option(animateOpt.build())
-                    .group(group.build());
+                    .option(toggleBind)
+                    .option(lookContainer)
+                    .option(animateItem)
+                    .option(animateOpt)
+                    .option(colorOpt)
+                    .build();
 
-            builder.category(main.build());
+            builder.category(main);
 
             return builder;
         }).generateScreen(parent);
