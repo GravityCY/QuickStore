@@ -41,9 +41,9 @@ public class Helper {
     }
 
     /**
-     * Gives you a new integer with shifted bytes according to the indices provided by `indexArray`
+     * Gives you a new integer with re-ordered bytes according to the indices provided by `indexArray`
      */
-    public static int shift(int value, int... indexArray) {
+    public static int reorder(int value, int... indexArray) {
         int ret = 0;
 
         for (int i = 0; i < indexArray.length; i++) {
@@ -113,10 +113,10 @@ public class Helper {
      * @return the clicked item stack and the cursor item stack
      */
     public static ClickData leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
-        var handler = player.currentScreenHandler;
-        manager.clickSlot(handler.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
-        var click = handler.getSlot(clickSlotId).getStack().copy();
-        var cursor = handler.getCursorStack().copy();
+        var screen = player.currentScreenHandler;
+        manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
+        var click = screen.getSlot(clickSlotId).getStack().copy();
+        var cursor = screen.getCursorStack().copy();
         return new ClickData(click, cursor);
     }
 
