@@ -85,7 +85,10 @@ public class ItemIO implements ClientModInitializer {
 
     private long startWaiting;
 
-    public static boolean isInValidScreen(MinecraftClient client) {
+    /**
+     * Whether is in a screen that should run inventory operations
+     */
+    public static boolean isValidScreen(MinecraftClient client) {
         return client.currentScreen instanceof HandledScreen<?> && client.player.currentScreenHandler == client.player.playerScreenHandler;
     }
 
@@ -117,6 +120,7 @@ public class ItemIO implements ClientModInitializer {
         ModConfig.INSTANCE = ModConfig.HANDLER.instance();
 
         var client = MinecraftClient.getInstance();
+        ClientTickEvents.START_WORLD_TICK.register(w -> KeybindManager.tick(client));
         ClientTickEvents.END_WORLD_TICK.register(w -> {
             if (!ModConfig.INSTANCE.enable_mod) return;
             this.onTick(client);
@@ -131,7 +135,7 @@ public class ItemIO implements ClientModInitializer {
             if (!ModConfig.INSTANCE.enable_mod) return;
 
             if (client.currentScreen != null) {
-                if (ModConfig.INSTANCE.inventory_operations && !this.isStoreDown && isInValidScreen(client)) {
+                if (ModConfig.INSTANCE.inventory_operations && !this.isStoreDown && isValidScreen(client)) {
                     this.tickItemScreenIO(client);
                     return;
                 }
@@ -262,7 +266,6 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void onTick(MinecraftClient client) {
-        KeybindManager.tick(client);
         if (this.isStoreDown) {
             this.tickItemIO(client);
         }
@@ -277,7 +280,7 @@ public class ItemIO implements ClientModInitializer {
         if (data.slotIndex() >= client.player.getInventory().main.size()) return;
         if (data.slot().inventory != client.player.getInventory()) return;
 
-        DEBUG(String.valueOf(data.slotIndex()));
+        DEBUG("Ticking ItemScreenIO, slot {}", data.slotIndex());
         if (ModConfig.INSTANCE.toggle_bind) {
             this.toggleStoreDown(client);
         } else {
@@ -291,7 +294,7 @@ public class ItemIO implements ClientModInitializer {
     private void tickItemIO(MinecraftClient client) {
         var hit = Helper.getLookingAtInventory(client);
 
-        if (this.getInvalid(client.world, client.player).isEmpty()) {
+        if (this.getInvalidBlocks(client.world, client.player).isEmpty()) {
             this.anyInvalid = false;
         } else {
             if (!this.anyInvalid) {
@@ -379,31 +382,6 @@ public class ItemIO implements ClientModInitializer {
         this.doRestock = false;
     }
 
-    private List<BlockRec> getInvalid(World world, PlayerEntity player) {
-        List<BlockRec> invalid = new ArrayList<>();
-        for (BlockRec blockRec : this.inventoryBlocks) {
-            BlockPos pos = blockRec.pos();
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (!blockRec.isTooFar(player) && blockEntity instanceof Inventory) continue;
-            invalid.add(blockRec);
-        }
-        return invalid;
-    }
-
-    private void removeInvalid(World world, PlayerEntity player) {
-        var hadSomeTooFar = false;
-        for (BlockRec blockRec : this.getInvalid(world, player)) {
-            this.inventoryBlocks.remove(blockRec);
-            Vec3d particlePos = blockRec.getParticlePosition();
-            player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
-            DEBUG("Removing '{}'", blockRec.pos().toShortString());
-            hadSomeTooFar = true;
-        }
-        if (hadSomeTooFar) {
-            player.sendMessage(Text.translatable(FAR_INVENTORY_KEY), true);
-        }
-    }
-
     private boolean nextInventoryBlock() {
         if (!this.inventoryBlockIterator.hasNext()) return false;
         this.currentInventoryBlock = this.inventoryBlockIterator.next();
@@ -469,6 +447,37 @@ public class ItemIO implements ClientModInitializer {
             this.clear();
         } else {
             this.sendOpenScreenPacket(client, this.currentInventoryBlock);
+        }
+    }
+
+    /**
+     * Returns a list of blocks that are 'invalid', meaning they are too far away from the player.
+     */
+    private List<BlockRec> getInvalidBlocks(World world, PlayerEntity player) {
+        List<BlockRec> invalid = new ArrayList<>();
+        for (BlockRec blockRec : this.inventoryBlocks) {
+            BlockPos pos = blockRec.pos();
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (!blockRec.isTooFar(player) && blockEntity instanceof Inventory) continue;
+            invalid.add(blockRec);
+        }
+        return invalid;
+    }
+
+    /**
+     * Removes all blocks that are too far away from the player.
+     */
+    private void removeInvalid(World world, PlayerEntity player) {
+        var hadSomeTooFar = false;
+        for (BlockRec blockRec : this.getInvalidBlocks(world, player)) {
+            this.inventoryBlocks.remove(blockRec);
+            Vec3d particlePos = blockRec.getParticlePosition();
+            player.getWorld().addParticle(REMOVE_BLOCK_PARTICLE, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
+            DEBUG("Removing '{}'", blockRec.pos().toShortString());
+            hadSomeTooFar = true;
+        }
+        if (hadSomeTooFar) {
+            player.sendMessage(Text.translatable(FAR_INVENTORY_KEY), true);
         }
     }
 

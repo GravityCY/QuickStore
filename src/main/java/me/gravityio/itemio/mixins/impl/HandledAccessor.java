@@ -7,6 +7,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(HandledScreen.class)
 public interface HandledAccessor {
-    @Invoker
-    boolean callIsPointOverSlot(Slot slot, double pointX, double pointY);
+    @Invoker("isPointOverSlot")
+    boolean itemio$isPointOverSlot(Slot slot, double pointX, double pointY);
 }

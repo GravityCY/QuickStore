@@ -241,7 +241,7 @@ public class Helper {
 
         ScreenHandler handler = handled.getScreenHandler();
         for (Slot slot : handler.slots) {
-            if (accessor.callIsPointOverSlot(slot, mx, my)) {
+            if (accessor.itemio$isPointOverSlot(slot, mx, my)) {
                 data = new HoverData(handler, handled, slot, slot.id, slot.getIndex(), slot.getStack(), mx, my);
                 break;
             }
