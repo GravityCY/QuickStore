@@ -5,6 +5,7 @@
 
   "messages.itemio.far_inventory": "§cSome inventories were too far away!",
   "messages.itemio.toggle": "You are now selecting containers.",
+  "messages.itemio.cancel": "Cancelling!",
 
   "yacl.itemio.title": "ItemIO",
 

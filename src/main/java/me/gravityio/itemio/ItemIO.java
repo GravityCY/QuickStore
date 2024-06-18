@@ -162,7 +162,7 @@ public class ItemIO implements ClientModInitializer {
 
             if (!this.isStoreDown || key != GLFW.GLFW_KEY_ESCAPE) return false;
 
-            client.player.sendMessage(Text.literal("Cancelling").formatted(Formatting.RED), true);
+            client.player.sendMessage(Text.translatable("messages.itemio.cancel").formatted(Formatting.RED), true);
             this.isStoreDown = false;
             this.clear();
             return true;
