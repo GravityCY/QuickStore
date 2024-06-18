@@ -10,7 +10,7 @@ plugins {
 version = project.mod_version
 group = "me.gravityio"
 
-def changelog = "+ Update to 1.21"
+def changelog = "- Added a better color picking option."
 def supportedVersions = ["1.21"]
 
 base {
