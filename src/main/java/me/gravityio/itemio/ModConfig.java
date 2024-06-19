@@ -27,7 +27,7 @@ public class ModConfig {
 
     public static final ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler
             .createBuilder(ModConfig.class)
-            .id(new Identifier(ItemIO.MOD_ID))
+            .id(new Identifier(ItemIO.MOD_ID, "config"))
             .serializer(serializer ->
                     GsonConfigSerializerBuilder.create(serializer)
                             .setPath(PATH)
