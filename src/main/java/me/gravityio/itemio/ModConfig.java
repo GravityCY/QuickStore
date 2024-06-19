@@ -122,37 +122,43 @@ public class ModConfig {
         return YetAnotherConfigLib.create(HANDLER, (defaults, config, builder) -> {
             builder.title(Text.translatable(TITLE));
 
+            Function<Option<Boolean>, ControllerBuilder<Boolean>> onOffCont = opt -> BooleanControllerBuilder.create(opt).coloured(true).onOffFormatter();
+
             var enableModOpt = getOption(
                     ItemIO.MOD_ID, "enable_mod",
-                    BooleanControllerBuilder::create,
+                    onOffCont,
                     defaults.enable_mod, config::getEnableMod, config::setEnableMod
             ).build();
 
             var inventoryOpsOpt = getOption(
                     ItemIO.MOD_ID, "inventory_operations",
-                    BooleanControllerBuilder::create,
+                    onOffCont,
                     defaults.inventory_operations, config::getInventoryOperations, config::setInventoryOperations
             ).build();
 
             var animateOpt = getOption(
                     ItemIO.MOD_ID, "animate_opacity",
-                    BooleanControllerBuilder::create,
-                    defaults.animate_opacity, config::getAnimateOpacity, config::setAnimateOpacity).build();
+                    onOffCont,
+                    defaults.animate_opacity, config::getAnimateOpacity, config::setAnimateOpacity
+            ).build();
 
             var animateItem = getOption(
                     ItemIO.MOD_ID, "animate_item",
-                    BooleanControllerBuilder::create,
-                    defaults.animate_item, config::getAnimateItem, config::setAnimateItem).build();
+                    onOffCont,
+                    defaults.animate_item, config::getAnimateItem, config::setAnimateItem
+            ).build();
 
             var lookContainer = getOption(
                     ItemIO.MOD_ID, "look_container",
-                    BooleanControllerBuilder::create,
-                    defaults.need_look_at_container, config::getLookAtContainer, config::setLookAtContainer).build();
+                    onOffCont,
+                    defaults.need_look_at_container, config::getLookAtContainer, config::setLookAtContainer
+            ).build();
 
             var toggleBind = getOption(
                     ItemIO.MOD_ID, "toggle_bind",
-                    BooleanControllerBuilder::create,
-                    defaults.toggle_bind, config::getToggleBind, config::setToggleBind).build();
+                    onOffCont,
+                    defaults.toggle_bind, config::getToggleBind, config::setToggleBind
+            ).build();
 
             var colorOpt = getOption(
                     ItemIO.MOD_ID, "colour",
