@@ -27,18 +27,6 @@
   "yacl.itemio.animate_opacity.label": "Animate Opacity",
   "yacl.itemio.animate_opacity.desc": "Whether to animate the opacity of the selection.",
 
-  "yacl.itemio.group.outline_color.label": "Outline Color",
-  "yacl.itemio.group.outline_color.desc": "The color to overlay over blocks when storing or extracting from an container.",
-
-  "yacl.itemio.color.r.label": "Red",
-  "yacl.itemio.color.r.desc": "The red part of the color.",
-
-  "yacl.itemio.color.g.label": "Green",
-  "yacl.itemio.color.g.desc": "The green part of the color.",
-
-  "yacl.itemio.color.b.label": "Blue",
-  "yacl.itemio.color.b.desc": "The blue part of the color.",
-
-  "yacl.itemio.color.a.label": "Alpha",
-  "yacl.itemio.color.a.desc": "How transparent the color should be.\n\n§lAny value under 10 for some reason Minecraft doesn't render."
+  "yacl.itemio.outline_color.label": "Outline Color",
+  "yacl.itemio.outline_color.desc": "The color to overlay over blocks when storing or extracting from an container."
 }
