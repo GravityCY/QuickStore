@@ -7,6 +7,22 @@ without needing to open their inventories.
 **Need on Client: ✅  Need on Server: ❌**\
 **Report any Issues on [GitHub](https://github.com/GravityCY/QuickStore/issues) or my [Discord Server](https://discord.gg/Ef4Z22gnqj)**
 
+___
+
+<a href="https://github.com/GravityCY/QuickStore">
+    <img alt="github" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/github_vector.svg">
+</a>
+
+<a href="https://discord.gg/CfAYy5KDHG">
+    <img alt="discord-singular" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-singular_vector.svg">
+</a>
+
+<a href="https://ko-fi.com/gravityio">
+    <img alt="kofi-singular-alt" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/kofi-singular-alt_vector.svg">
+</a>
+
+___
+
 *Splitting among containers while holding the `Increment` modifier. (scrolls your hotbar to the right)*
 ![GIF](https://i.ibb.co/7Qrm64j/output.gif)
 
