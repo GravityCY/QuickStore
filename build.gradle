@@ -10,7 +10,7 @@ plugins {
 version = project.mod_version
 group = "me.gravityio"
 
-def changelog = "- Added a better color picking option."
+def changelog = "- Added the ability to use the keybind while in your inventory screen!\n- Added a better color picking option."
 def supportedVersions = ["1.21"]
 
 base {
