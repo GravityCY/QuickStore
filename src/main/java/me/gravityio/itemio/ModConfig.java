@@ -20,13 +20,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ModConfig {
+    public static ModConfig INSTANCE;
     public static final String TITLE = "yacl.itemio.title";
 
     public static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("itemio.json5");
 
     public static final ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler
             .createBuilder(ModConfig.class)
-            .id(Identifier.of(ItemIO.MOD_ID))
+            .id(new Identifier(ItemIO.MOD_ID, "config"))
             .serializer(serializer ->
                     GsonConfigSerializerBuilder.create(serializer)
                             .setPath(PATH)
@@ -46,6 +47,10 @@ public class ModConfig {
                 .binding(def, getter, setter);
     }
 
+    @SerialEntry(comment = "Whether to enable the mod")
+    public boolean enable_mod = true;
+    @SerialEntry(comment = "Whether to enable the functionality to start an operation in the inventory.")
+    public boolean inventory_operations = true;
     @SerialEntry(comment = "Whether you need to look at a container to run an operation.")
     public boolean need_look_at_container = false;
     @SerialEntry(comment = "Whether to toggle the bind. Tip for Toggle Mode: You can cancel a selection with the `Escape` key")
@@ -56,6 +61,22 @@ public class ModConfig {
     public boolean animate_opacity = true;
     @SerialEntry(comment = "The color to overlay over blocks when storing or extracting from an container.")
     public int rgba_outline_color = 0xffffff40;
+
+    public boolean getEnableMod() {
+        return enable_mod;
+    }
+
+    public void setEnableMod(boolean enable_mod) {
+        this.enable_mod = enable_mod;
+    }
+
+    public boolean getInventoryOperations() {
+        return inventory_operations;
+    }
+
+    public void setInventoryOperations(boolean inventory_operations) {
+        this.inventory_operations = inventory_operations;
+    }
 
     public boolean getToggleBind() {
         return toggle_bind;
@@ -101,12 +122,17 @@ public class ModConfig {
         return YetAnotherConfigLib.create(HANDLER, (defaults, config, builder) -> {
             builder.title(Text.translatable(TITLE));
 
-//            Option<Integer>[] outlineColors = getRGBAOptions("yacl.itemio.color.%s", defaults.rgba_outline_color, config::getOutlineColor, config::setOutlineColor);
-//
-//            OptionGroup.Builder group = OptionGroup.createBuilder()
-//                    .name(Text.translatable("yacl.itemio.group.outline_color.label"))
-//                    .description(OptionDescription.of(Text.translatable("yacl.itemio.group.outline_color.desc")))
-//                    .options(List.of(outlineColors));
+            var enableModOpt = getOption(
+                    ItemIO.MOD_ID, "enable_mod",
+                    BooleanControllerBuilder::create,
+                    defaults.enable_mod, config::getEnableMod, config::setEnableMod
+            ).build();
+
+            var inventoryOpsOpt = getOption(
+                    ItemIO.MOD_ID, "inventory_operations",
+                    BooleanControllerBuilder::create,
+                    defaults.inventory_operations, config::getInventoryOperations, config::setInventoryOperations
+            ).build();
 
             var animateOpt = getOption(
                     ItemIO.MOD_ID, "animate_opacity",
@@ -138,6 +164,8 @@ public class ModConfig {
 
             var main = ConfigCategory.createBuilder()
                     .name(Text.translatable(TITLE))
+                    .option(enableModOpt)
+                    .option(inventoryOpsOpt)
                     .option(toggleBind)
                     .option(lookContainer)
                     .option(animateItem)
