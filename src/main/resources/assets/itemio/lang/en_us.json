@@ -27,6 +27,6 @@
   "yacl.itemio.animate_opacity.label": "Animate Opacity",
   "yacl.itemio.animate_opacity.desc": "Whether to animate the opacity of the selection.",
 
-  "yacl.itemio.outline_color.label": "Outline Color",
-  "yacl.itemio.outline_color.desc": "The color to overlay over blocks when storing or extracting from an container."
+  "yacl.itemio.colour.label": "Outline Color",
+  "yacl.itemio.colour.desc": "The color to overlay over blocks when storing or extracting from an container."
 }
