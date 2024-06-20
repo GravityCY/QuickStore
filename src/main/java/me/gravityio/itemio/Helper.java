@@ -78,6 +78,7 @@ public class Helper {
         Vec3d cameraPos = entity.getCameraPosVec(tickDelta);
         Vec3d cameraForward = entity.getRotationVec(tickDelta);
 
+
         Vec3d cameraEnd = cameraPos.add(cameraForward.x * maxDistance, cameraForward.y * maxDistance, cameraForward.z * maxDistance);
         return world.raycast(new PredicateRaycastContext(
                 cameraPos, cameraEnd,

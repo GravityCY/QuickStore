@@ -9,6 +9,11 @@ without needing to open their inventories.
 
 ___
 
+*Splitting among containers while holding the `Increment` modifier. (scrolls your hotbar to the right)*
+![GIF](https://i.ibb.co/7Qrm64j/output.gif)
+
+---
+
 <a href="https://github.com/GravityCY/QuickStore">
     <img alt="github" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/github_vector.svg">
 </a>
@@ -22,9 +27,6 @@ ___
 </a>
 
 ___
-
-*Splitting among containers while holding the `Increment` modifier. (scrolls your hotbar to the right)*
-![GIF](https://i.ibb.co/7Qrm64j/output.gif)
 
 ## Input
 You want to put something in a container quickly?\
