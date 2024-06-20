@@ -9,15 +9,15 @@ without needing to open their inventories.
 
 ___
 
-<a href="https://github.com/GravityCY/QuickStore">
+<a href="https://github.com/GravityCY/QuickStore" target="_blank">
     <img alt="github" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/github_vector.svg">
 </a>
 
-<a href="https://discord.gg/CfAYy5KDHG">
+<a href="https://discord.gg/Ef4Z22gnqj" target="_blank">
     <img alt="discord-singular" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-singular_vector.svg">
 </a>
 
-<a href="https://ko-fi.com/gravityio">
+<a href="https://ko-fi.com/gravityio" target="_blank">
     <img alt="kofi-singular-alt" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/kofi-singular-alt_vector.svg">
 </a>
 
