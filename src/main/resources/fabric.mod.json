@@ -25,7 +25,7 @@
   },
   "mixins": [
     "itemio.mixins.json",
-    "compat.mixins.json"
+    "itemio.compat.mixins.json"
   ],
   "custom": {
     "modmenu": {
