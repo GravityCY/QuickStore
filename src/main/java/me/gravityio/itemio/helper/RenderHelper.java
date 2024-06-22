@@ -1,4 +1,4 @@
-package me.gravityio.itemio;
+package me.gravityio.itemio.helper;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;

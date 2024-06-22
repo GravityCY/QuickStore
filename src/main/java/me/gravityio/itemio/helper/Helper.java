@@ -1,5 +1,6 @@
-package me.gravityio.itemio;
+package me.gravityio.itemio.helper;
 
+import me.gravityio.itemio.lib.PredicateRaycastContext;
 import me.gravityio.itemio.mixins.impl.HandledAccessor;
 import net.minecraft.block.WallSignBlock;
 import net.minecraft.client.MinecraftClient;
@@ -219,7 +220,7 @@ public class Helper {
             clickOut = click.copy();
             cursorOut = click.copy();
             clickOut.setCount(click.getCount() / 2);
-            cursorOut.setCount(click.getCount() / 2 + 1);
+            cursorOut.setCount((int) Math.ceil(click.getCount() / 2f));
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();

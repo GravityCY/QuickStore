@@ -1,6 +1,10 @@
 package me.gravityio.itemio;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import me.gravityio.itemio.helper.Helper;
+import me.gravityio.itemio.helper.RenderHelper;
+import me.gravityio.itemio.helper.ScreenHandlerHelper;
+import me.gravityio.itemio.lib.BlockRec;
 import me.gravityio.itemio.lib.keybind.KeybindManager;
 import me.gravityio.itemio.lib.keybind.KeybindWrapper;
 import net.fabricmc.api.ClientModInitializer;
@@ -32,10 +36,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.math.Vec2f;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -96,10 +97,7 @@ public class ItemIO implements ClientModInitializer {
         return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keycode);
     }
 
-    // TODO: Compatibility: Blur Mod Compatibility stop it from blurring the screen when we do our stuff
     // TODO: Compatibility: IRIS Mod Compatibility shaders
-    // TODO: Bug: when we split stuff sometimes it decides to stop in one of the screens with the split items in our own inventory
-    // TODO: Feature: Ability to select an item stack in your inventory with the keybind when hovering over it
 
     public static void DEBUG(String message, Object... args) {
         if (!IS_DEBUG) {
@@ -120,7 +118,9 @@ public class ItemIO implements ClientModInitializer {
         ModConfig.INSTANCE = ModConfig.HANDLER.instance();
 
         var client = MinecraftClient.getInstance();
-        ClientTickEvents.START_WORLD_TICK.register(w -> KeybindManager.tick(client));
+        ClientTickEvents.START_WORLD_TICK.register(w -> {
+            KeybindManager.tick(client);
+        });
         ClientTickEvents.END_WORLD_TICK.register(w -> {
             if (!ModConfig.INSTANCE.enable_mod) return;
             this.onTick(client);
@@ -159,8 +159,7 @@ public class ItemIO implements ClientModInitializer {
 
         ModEvents.ON_KEY.register((key, scancode, action, modifiers) -> {
             if (!ModConfig.INSTANCE.enable_mod) return false;
-
-            if (!this.isStoreDown || key != GLFW.GLFW_KEY_ESCAPE) return false;
+            if (client.player == null || !this.isStoreDown || key != GLFW.GLFW_KEY_ESCAPE) return false;
 
             client.player.sendMessage(Text.translatable("messages.itemio.cancel").formatted(Formatting.RED), true);
             this.isStoreDown = false;
@@ -216,7 +215,7 @@ public class ItemIO implements ClientModInitializer {
             int al = Math.max(a, 30);
             int ah = Math.min(a + 50, 255);
             double p = (Math.sin(System.currentTimeMillis() / 250d) + 1) / 2;
-            a = (int) (al + ((ah - al) * p));
+            a = (int) MathHelper.lerp(p, al, ah);
         }
 
         for (BlockRec block : this.inventoryBlocks) {
@@ -389,6 +388,7 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void sendOpenScreenPacket(MinecraftClient client, BlockRec rec) {
+        if (client.getNetworkHandler() == null) return;
         DEBUG("Sending open screen packet for '{}'", rec.pos().toShortString());
         client.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND, rec.toBlockHitResult(), 6969));
     }
@@ -398,7 +398,7 @@ public class ItemIO implements ClientModInitializer {
 
         DEBUG("Screen {} fully opened.", handler);
         var slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
-        var outputSlotId = ScreenHandlerHelper.getOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
+        var outputSlotId = ScreenHandlerHelper.getFullOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
         if (outputSlotId != -1 && (this.heldStack.isEmpty() || ItemStack.areItemsAndComponentsEqual(handler.getSlot(outputSlotId).getStack(), this.heldStack))) {
             DEBUG("Moving items found in the output slot into our selected slot.");
             ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
