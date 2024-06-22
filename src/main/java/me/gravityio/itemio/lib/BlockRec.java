@@ -1,4 +1,4 @@
-package me.gravityio.itemio;
+package me.gravityio.itemio.lib;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;

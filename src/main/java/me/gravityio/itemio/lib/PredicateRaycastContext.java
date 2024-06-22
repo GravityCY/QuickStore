@@ -1,4 +1,4 @@
-package me.gravityio.itemio;
+package me.gravityio.itemio.lib;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;

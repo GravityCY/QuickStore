@@ -1,6 +1,7 @@
-package me.gravityio.itemio;
+package me.gravityio.itemio.helper;
 
 import com.google.common.base.Predicates;
+import me.gravityio.itemio.lib.ListIterator;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerEntity;
@@ -35,6 +36,7 @@ public class ScreenHandlerHelper {
         return switch (type) {
             case PLAYER -> PLAYER_SLOTS_ONLY;
             case OTHER -> CONTAINER_SLOTS_ONLY;
+            case ANY -> Predicates.alwaysTrue();
         };
     }
 
@@ -97,14 +99,13 @@ public class ScreenHandlerHelper {
      * @param predicate the predicate used to filter the slot
      * @return the first slot that satisfies the predicate
      */
-    public static Slot getPredicateSlot(ScreenHandler handler, Predicate<Slot> predicate) {
-        for (Slot slot : handler.slots) {
+    public static Slot getPredicateSlot(ScreenHandler handler, Predicate<Slot> predicate, boolean reverse) {
+        for (Slot slot : ListIterator.of(handler.slots, reverse)) {
             if (!predicate.test(slot)) continue;
             return slot;
         }
         return null;
     }
-
     /**
      * If an Inventory has an 'Output Slot' it will check if it has any item in that slot and return it
      *
@@ -112,16 +113,11 @@ public class ScreenHandlerHelper {
      * @param type    the type of inventory to search for (TOP or BOTTOM)
      * @return the ID of the output slot, or -1 if no output slot is found
      */
-    public static int getOutputSlotID(ScreenHandler handler, InventoryType type) {
-        List<Slot> slots = switch (type) {
-            case PLAYER -> getPredicateSlots(handler, PLAYER_SLOTS_ONLY);
-            case OTHER -> getPredicateSlots(handler, CONTAINER_SLOTS_ONLY);
-        };
-        for (Slot slot : slots) {
-            if (slot.getStack().isEmpty() || !isOutputSlot(slot)) continue;
-            return slot.id;
-        }
-        return -1;
+    public static int getFullOutputSlotID(ScreenHandler handler, InventoryType type) {
+        var predicate = getPredicate(type).and(s -> !s.getStack().isEmpty() && isOutputSlot(s));
+        var slot = getPredicateSlot(handler, predicate, false);
+        if (slot == null) return -1;
+        return slot.id;
     }
 
     /**
@@ -154,17 +150,11 @@ public class ScreenHandlerHelper {
      * @param type    the inventory type to filter the slots
      * @return the ID of the first empty slot found, or -1 if no empty slot is found
      */
-    private static int getEmptySlotID(ScreenHandler handler, InventoryType type) {
-        List<Slot> slots = switch (type) {
-            case PLAYER -> getPredicateSlots(handler, PLAYER_SLOTS_ONLY);
-            case OTHER -> getPredicateSlots(handler, CONTAINER_SLOTS_ONLY);
-        };
-
-        for (Slot slot : slots) {
-            if (!slot.getStack().isEmpty()) continue;
-            return slot.id;
-        }
-        return -1;
+    private static int getEmptySlotID(ScreenHandler handler, InventoryType type, boolean reverse) {
+        var predicate = getPredicate(type).and(s -> s.getStack().isEmpty());
+        var slot = getPredicateSlot(handler, predicate, reverse);
+        if (slot == null) return -1;
+        return slot.id;
     }
 
     /**
@@ -176,7 +166,8 @@ public class ScreenHandlerHelper {
      * @return The ID of the first non-empty slot, or -1 if no non-empty slots are found.
      */
     public static int getNonEmptySlotID(ScreenHandler handler, InventoryType type) {
-        Slot ret = getPredicateSlot(handler, getPredicate(type).and(slot -> !slot.getStack().isEmpty()));
+        var predicate = getPredicate(type).and(slot -> !slot.getStack().isEmpty());
+        Slot ret = getPredicateSlot(handler, predicate, false);
         return ret != null ? ret.id : -1;
     }
 
@@ -189,13 +180,14 @@ public class ScreenHandlerHelper {
      * @return the slot ID, or -1 if not found
      */
     public static int findIndexSlotID(int slotIndex, ScreenHandler handler, InventoryType type) {
-        Slot ret = getPredicateSlot(handler, getPredicate(type).and(slot -> slot.getIndex() == slotIndex));
+        var predicate = getPredicate(type).and(slot -> slot.getIndex() == slotIndex);
+        Slot ret = getPredicateSlot(handler, predicate, false);
         return ret != null ? ret.id : -1;
     }
 
     public static int findSlotID(int slotID, ScreenHandler handler, InventoryType type) {
         Predicate<Slot> predicate = getPredicate(type).and(slot -> slot.id == slotID);
-        Slot found = getPredicateSlot(handler, predicate);
+        Slot found = getPredicateSlot(handler, predicate, false);
         return found != null ? found.id : -1;
     }
 
@@ -376,35 +368,31 @@ public class ScreenHandlerHelper {
             return;
         }
 
-        int availableSlot = getEmptySlotID(handler, InventoryType.PLAYER);
-        for (int i = 0; i < 10; i++) {
-            if (shouldSplit(player, splitSlotId, newSize)) {
-                Helper.rightClickSlot(manager, player, splitSlotId);
-                Helper.leftClickSlot(manager, player, availableSlot);
-
-            } else {
-                break;
-            }
+        int availableSlot = getEmptySlotID(handler, InventoryType.ANY, false);
+        if (availableSlot == -1) {
+            return;
+        }
+        while (shouldSplit(player, splitSlotId, newSize)) {
+            Helper.rightClickSlot(manager, player, splitSlotId);
+            Helper.leftClickSlot(manager, player, availableSlot);
         }
         count = getCountAt(handler, splitSlotId);
 
         int distance = count - newSize;
-        if (distance > 0) {
-            Helper.leftClickSlot(manager, player, splitSlotId);
-            for (int i = 0; i < distance; i++) {
-                Helper.rightClickSlot(manager, player, availableSlot);
+        int absDistance = Math.abs(distance);
+        int left = distance > 0 ? splitSlotId : availableSlot;
+        int right = distance > 0 ? availableSlot : splitSlotId;
+
+        if (absDistance > 0) {
+            Helper.leftClickSlot(manager, player, left);
+            for (int i = 0; i < absDistance; i++) {
+                Helper.rightClickSlot(manager, player, right);
             }
-            Helper.leftClickSlot(manager, player, splitSlotId);
-        } else {
-            Helper.leftClickSlot(manager, player, availableSlot);
-            for (int i = 0; i > distance; i--) {
-                Helper.rightClickSlot(manager, player, splitSlotId);
-            }
-            Helper.leftClickSlot(manager, player, availableSlot);
+            Helper.leftClickSlot(manager, player, left);
         }
 
-        Helper.shiftClickSlot(manager, player, splitSlotId);
         Helper.leftClickSlot(manager, player, availableSlot);
+        Helper.shiftClickSlot(manager, player, splitSlotId);
         Helper.leftClickSlot(manager, player, splitSlotId);
     }
 
@@ -489,7 +477,7 @@ public class ScreenHandlerHelper {
 //    }
 
     public enum InventoryType {
-        PLAYER, OTHER
+        PLAYER, OTHER, ANY
     }
 
 }
