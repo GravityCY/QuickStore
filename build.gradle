@@ -1,7 +1,7 @@
 import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 plugins {
-    id "fabric-loom" version "1.6-SNAPSHOT"
+    id "fabric-loom" version "1.7-SNAPSHOT"
     id "com.modrinth.minotaur" version "2.+"
     id 'net.darkhax.curseforgegradle' version "1.1.24"
     id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
@@ -10,8 +10,10 @@ plugins {
 version = project.mod_version
 group = "me.gravityio"
 
-def changelog = "- Fixed a bug when you had a full inventory and tried splitting\n- Fixed compatibility with Blur+ Mod"
-def supportedVersions = ["1.21"]
+def javaVersionNum = project.java_version.toInteger()
+def javaVersion = JavaVersion.toVersion(javaVersionNum)
+def supportedVersions = project.supported_versions.split(" ").toList()
+def supportedEnvironments = project.supported_environments.split(" ").toList()
 
 base {
     archivesName = project.mod_id
@@ -51,7 +53,7 @@ project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-ap
 dependencies {
     modImplementation "dev.isxander:yet-another-config-lib:${yacl_version}-fabric"
     modImplementation "com.terraformersmc:modmenu:${modmenu_version}"
-    modCompileOnly "maven.modrinth:blur-fabric:${blur_version}"
+//    modCompileOnly "maven.modrinth:blur-fabric:${blur_version}"
 //    modImplementation "maven.modrinth:iris:1.7.0+1.20.6"
 }
 
@@ -78,16 +80,19 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
     group = "publishing"
     apiToken = System.getenv("CURSEFORGE_UPLOAD")
 
-    def mainFile = upload(1031152, remapJar)
-    mainFile.changelog = changelog
+    def mainFile = upload(project.curseforge_id, remapJar)
+    mainFile.displayName = "${mod_name} ${mod_version}"
+    mainFile.changelog = project.changelog
     supportedVersions.each {
         mainFile.addGameVersion(it)
     }
-    mainFile.displayName = "${mod_name} ${mod_version}"
-    mainFile.addEnvironment("Client")
+    supportedEnvironments.each {
+        mainFile.addEnvironment(it)
+    }
     mainFile.addModLoader("Fabric")
     mainFile.releaseType = "release"
-    mainFile.addJavaVersion("Java 21")
+    mainFile.addJavaVersion("Java ${javaVersionNum}")
+
     mainFile.addRequirement("fabric-api")
     mainFile.addRequirement("yacl")
     mainFile.addOptional("modmenu")
@@ -95,13 +100,13 @@ tasks.register('publishCurseForge', TaskPublishCurseForge) {
 
 modrinth {
     token = System.getenv("MODRINTH_UPLOAD")
-    projectId = "item-io"
+    projectId = project.modrinth_id
     versionName = "${mod_name} ${mod_version}"
     versionNumber = mod_version
     uploadFile = remapJar
     gameVersions = supportedVersions
     loaders = ["fabric"]
-    delegate.changelog = changelog
+    delegate.changelog = project.changelog
     dependencies {
         required.project "fabric-api"
         required.project "yacl"
@@ -130,14 +135,14 @@ processResources  {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 21
+    it.options.release = javaVersionNum
 }
 
 java {
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
 }
 
 jar {
