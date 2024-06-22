@@ -81,8 +81,6 @@ public class ItemIO implements ClientModInitializer {
     private boolean fromScreen;
     private boolean anyInvalid;
     private boolean isStoreDown;
-    private boolean doScroll;
-    private boolean doRestock;
 
     private long startWaiting;
 
@@ -129,7 +127,9 @@ public class ItemIO implements ClientModInitializer {
             if (!ModConfig.INSTANCE.enable_mod || handler == client.player.playerScreenHandler) return;
             this.onScreenFullyOpened(client, handler);
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> this.clear());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> {
+            this.clear();
+        });
 
         STORE.onPressed(() -> {
             if (!ModConfig.INSTANCE.enable_mod) return;
@@ -343,8 +343,6 @@ public class ItemIO implements ClientModInitializer {
         this.inventoryBlockIterator = this.inventoryBlocks.iterator();
         this.waiting = true;
         this.splitCount = (int) Math.floor((double) this.heldStack.getCount() / this.inventoryBlocks.size());
-        this.doScroll = isKeyPressed(INCREMENT_MODIFIER_KEY);
-        this.doRestock = isKeyPressed(RESTOCK_MODIFIER_KEY);
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
@@ -365,8 +363,6 @@ public class ItemIO implements ClientModInitializer {
 
         this.fromScreen = false;
         this.waiting = false;
-        this.doScroll = false;
-        this.doRestock = false;
     }
 
     private boolean nextInventoryBlock() {
@@ -433,12 +429,12 @@ public class ItemIO implements ClientModInitializer {
                 client.player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1, 1);
             }
 
-            if (this.doScroll) {
+            if (this.doScroll()) {
                 DEBUG("Scrolling hotbar");
                 client.player.getInventory().scrollInHotbar(-1);
             }
 
-            if (this.doRestock && client.player.getMainHandStack().isEmpty()) {
+            if (this.doRestock() && client.player.getMainHandStack().isEmpty()) {
                 int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::areItemsAndComponentsEqual);
                 DEBUG("Restocking item {} found at {}", this.heldStack, foundSlotId);
                 if (foundSlotId != -1) {
@@ -480,6 +476,14 @@ public class ItemIO implements ClientModInitializer {
         if (hadSomeTooFar) {
             player.sendMessage(Text.translatable(FAR_INVENTORY_KEY), true);
         }
+    }
+
+    private boolean doRestock() {
+        return isKeyPressed(RESTOCK_MODIFIER_KEY);
+    }
+
+    private boolean doScroll() {
+        return isKeyPressed(INCREMENT_MODIFIER_KEY);
     }
 
 }
