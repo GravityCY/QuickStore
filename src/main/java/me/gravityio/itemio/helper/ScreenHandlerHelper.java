@@ -64,30 +64,17 @@ public class ScreenHandlerHelper {
     }
 
     /**
-     * Retrieves a list of slots from the given screen handler that satisfy the specified predicate.
-     *
-     * @param handler   the screen handler from which to retrieve the slots
-     * @param predicate the predicate used to filter the slots
-     * @return a list of slots that satisfy the predicate
-     */
-    public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> predicate) {
-        return getPredicateSlots(handler, predicate, Predicates.alwaysFalse());
-    }
-
-    /**
      * Retrieves a list of slots from the given screen handler that satisfy the specified predicates.
      *
      * @param handler      the screen handler from which to retrieve the slots
-     * @param shouldAdd    the predicate used to filter the slots to be added to the list
-     * @param shouldReturn the predicate used to determine when to stop adding slots to the list
+     * @param predicate    the predicate used to filter the slots to be added to the list
      * @return a list of slots that satisfy the predicates
      */
-    public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> shouldAdd, Predicate<Slot> shouldReturn) {
+    public static List<Slot> getPredicateSlots(ScreenHandler handler, Predicate<Slot> predicate, boolean reverse) {
         List<Slot> slots = new ArrayList<>();
-        for (Slot slot : handler.slots) {
-            if (!shouldAdd.test(slot)) continue;
+        for (Slot slot : ListIterator.of(handler.slots, reverse)) {
+            if (!predicate.test(slot)) continue;
             slots.add(slot);
-            if (shouldReturn.test(slot)) break;
         }
         return slots;
     }
@@ -140,7 +127,8 @@ public class ScreenHandlerHelper {
      * @return a list of empty slots
      */
     private static List<Slot> getEmptySlots(ScreenHandler handler, InventoryType type, Predicate<Slot> predicate) {
-        return getPredicateSlots(handler, getPredicate(type).and(slot -> !slot.hasStack() && predicate.test(slot)));
+        var merged = getPredicate(type).and(slot -> !slot.hasStack() && predicate.test(slot));
+        return getPredicateSlots(handler, merged, type == InventoryType.PLAYER);
     }
 
     /**
@@ -165,9 +153,9 @@ public class ScreenHandlerHelper {
      * @param type    The inventory type (TOP or BOTTOM) to filter the slots.
      * @return The ID of the first non-empty slot, or -1 if no non-empty slots are found.
      */
-    public static int getNonEmptySlotID(ScreenHandler handler, InventoryType type) {
+    public static int getNonEmptySlotID(ScreenHandler handler, InventoryType type, boolean reverse) {
         var predicate = getPredicate(type).and(slot -> !slot.getStack().isEmpty());
-        Slot ret = getPredicateSlot(handler, predicate, false);
+        Slot ret = getPredicateSlot(handler, predicate, reverse);
         return ret != null ? ret.id : -1;
     }
 
@@ -213,57 +201,13 @@ public class ScreenHandlerHelper {
      * @return the slot ID of the found ItemStack, or -1 if not found
      */
     public static int findSlotID(ItemStack searchStack, ScreenHandler handler, InventoryType type, BiPredicate<ItemStack, ItemStack> equalPredicate) {
-        List<Slot> slots = getPredicateSlots(handler, getPredicate(type));
+        List<Slot> slots = getPredicateSlots(handler, getPredicate(type), type == InventoryType.PLAYER);
 
         for (Slot slot : slots) {
             if (!equalPredicate.test(slot.getStack(), searchStack)) continue;
             return slot.id;
         }
         return -1;
-    }
-
-
-    public static void splitStackSpam(ScreenHandler handler, ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int outputSlotId, int newSize) {
-        int count = handler.getSlot(splitSlotId).getStack().getCount();
-        if (count < newSize) return;
-        if (count == newSize) {
-            Helper.leftClickSlot(manager, player, splitSlotId);
-            Helper.leftClickSlot(manager, player, outputSlotId);
-            return;
-        }
-
-        Helper.leftClickSlot(manager, player, splitSlotId);
-        if (newSize > 32) {
-            int distance = count - newSize;
-            for (int i = 0; i < distance; i++) {
-                Helper.rightClickSlot(manager, player, splitSlotId);
-            }
-            Helper.leftClickSlot(manager, player, outputSlotId);
-
-        } else {
-            for (int i = 0; i < newSize; i++) {
-                Helper.rightClickSlot(manager, player, outputSlotId);
-            }
-            Helper.leftClickSlot(manager, player, splitSlotId);
-
-        }
-    }
-
-    public static void splitStackSpamShift(ScreenHandler handler, ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
-        int count = handler.getSlot(splitSlotId).getStack().getCount();
-        if (count < newSize) return;
-        if (count == newSize) {
-            Helper.shiftClickSlot(manager, player, splitSlotId);
-            return;
-        }
-
-        Helper.leftClickSlot(manager, player, splitSlotId);
-        for (int i = 0; i < newSize; i++) {
-            Helper.rightClickSlot(manager, player, splitSlotId);
-        }
-        Helper.shiftClickSlot(manager, player, splitSlotId);
-        Helper.leftClickSlot(manager, player, splitSlotId);
-
     }
 
     /**
@@ -299,35 +243,6 @@ public class ScreenHandlerHelper {
             Helper.shiftClickSlot(client.interactionManager, client.player, fromSlotId);
         }
     }
-
-//    public static void splitAny(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int newSize) {
-//        var handler = player.currentScreenHandler;
-//        int count = getCountAt(handler, splitSlotId);
-//        int splits = (int) Math.floor((double) count / newSize);
-//        List<Slot> freeList = getEmptySlots(handler, InventoryType.PLAYER, (slot) -> slot.getIndex() >= 0 && slot.getIndex() < 36);
-//        if (freeList.size() >= splits) {
-//            Slot[] freeNeeded = new Slot[splits];
-//            for (int i = 0; i < freeNeeded.length; i++) {
-//                freeNeeded[i] = freeList.get(i);
-//            }
-//            splitStackQuickCraft(manager, player, splitSlotId, freeNeeded, splits);
-//        } else {
-//            splitStackShift();
-//        }
-//    }
-
-//    public static void splitStackQuickCraft(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, Slot[] freeSlots, int splits) {
-//        if (freeSlots.length < splits) return;
-//
-//        Slot[] freeNeeded = new Slot[splits];
-//        for (int i = 0; i < freeNeeded.length; i++) {
-//            freeNeeded[i] = freeSlots.get(i);
-//        }
-//
-//        Helper.leftClickSlot(manager, player, splitSlotId);
-//        Helper.quickcraftSlots(manager, player, freeNeeded, GLFW.GLFW_MOUSE_BUTTON_1);
-//        Helper.leftClickSlot(manager, player, splitSlotId);
-//    }
 
     /**
      * Splits the stack in a player's inventory at a specified slot into smaller stacks of a given size.
@@ -413,68 +328,6 @@ public class ScreenHandlerHelper {
         int b = Math.abs(stackCount - target);
         return a < b;
     }
-
-//    public static void splitStack(ClientPlayerInteractionManager manager, PlayerEntity player, int splitSlotId, int outputSlotId, int newSize) {
-//        var stack = player.playerScreenHandler.getSlot(splitSlotId).getStack();
-//        int count = stack.getCount();
-//
-//        var splitSteps = stepsToTarget(count, newSize);
-//
-//        QuickStoreMod.DEBUG("Times to split into target of {} is {}: ", newSize, splitSteps);
-//
-//        if (splitSteps < newSize) {
-//            Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
-//            Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
-//            for (int i = 0; i < splitSteps - 1; i++) {
-//                Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
-//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
-//            }
-//            var manual = newSize - split(count, splitSteps);
-//            QuickStoreMod.DEBUG("Now manually clicking {} times", manual);
-//            if (manual > 0) {
-//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
-//                for (int i = 0; i < manual; i++) {
-//                    Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
-//                }
-//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
-//            } else {
-//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
-//                for (int i = 0; i > manual; i--) {
-//                    Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
-//                }
-//                Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
-//            }
-//
-//        } else {
-//            Helper.leftClickSlot(manager, player, player.playerScreenHandler.syncId, splitSlotId);
-//            for (int i = 0; i < newSize; i++) {
-//                Helper.rightClickSlot(manager, player, player.playerScreenHandler.syncId, outputSlotId);
-//            }
-//        }
-//    }
-
-//    private static int split(int num, int times) {
-//        for (int i = 0; i < times; i++) {
-//            num = num / 2;
-//        }
-//        return num;
-//    }
-//
-//    private static int stepsToTarget(int count, int target) {
-//        int steps = 0;
-//        int distance = 100000; // 9
-//
-//        while (true) {
-//            count = (count + 1) / 2;
-//            var temp = Math.abs(target - count);
-//            if (temp < distance) {
-//                distance = temp;
-//            } else {
-//                return steps;
-//            }
-//            steps++;
-//        }
-//    }
 
     public enum InventoryType {
         PLAYER, OTHER, ANY

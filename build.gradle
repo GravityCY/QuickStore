@@ -10,7 +10,7 @@ plugins {
 version = project.mod_version
 group = "me.gravityio"
 
-def changelog = "- Added the ability to use the keybind while in your inventory screen!\n- Added a better color picking option."
+def changelog = "- Fixed a bug when you had a full inventory and tried splitting\n- Fixed compatibility with Blur+ Mod"
 def supportedVersions = ["1.21"]
 
 base {
