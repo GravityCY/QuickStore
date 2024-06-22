@@ -319,7 +319,7 @@ public class ItemIO implements ClientModInitializer {
     }
 
     private void onReleaseIO(MinecraftClient client) {
-        if (this.waiting) {
+        if (this.waiting || this.inventoryBlocks.isEmpty()) {
             return;
         }
 
@@ -347,19 +347,6 @@ public class ItemIO implements ClientModInitializer {
 
         client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
         DEBUG("Item: '{}', Count: '{}', Inventories: '{}', Split: '{}'", this.heldStack, this.heldStack.getCount(), this.inventoryBlocks.size(), this.splitCount);
-
-        if (!this.heldStack.isEmpty() && !this.inventoryBlocks.isEmpty()) {
-            int slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER);
-            Slot[] slots = ScreenHandlerHelper.splitStackQuickCraft(client.interactionManager, client.player, slotId, splitCount);
-            if (slots != null) {
-                StringBuilder sb = new StringBuilder(20);
-                for (Slot slot : slots) {
-                    sb.append(slot.getIndex()).append(", ");
-                }
-                DEBUG("Splitting stacks: {}", sb.toString());
-                this.splitSlotIndexIterator = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
-            }
-        }
 
         if (this.nextInventoryBlock()) {
             this.sendOpenScreenPacket(client, this.currentInventoryBlock);
@@ -396,6 +383,19 @@ public class ItemIO implements ClientModInitializer {
     private void onScreenFullyOpened(MinecraftClient client, ScreenHandler handler) {
         if (!this.waiting) return;
 
+        if (this.splitSlotIndexIterator == null && !this.heldStack.isEmpty()) {
+            int slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, client.player.currentScreenHandler, ScreenHandlerHelper.InventoryType.PLAYER);
+            Slot[] slots = ScreenHandlerHelper.splitStackQuickCraft(client.interactionManager, client.player, slotId, splitCount);
+            if (slots != null) {
+                StringBuilder sb = new StringBuilder(20);
+                for (Slot slot : slots) {
+                    sb.append(slot.getIndex()).append(", ");
+                }
+                DEBUG("Splitting stacks: {}", sb.toString());
+                this.splitSlotIndexIterator = Arrays.stream(slots).mapToInt(Slot::getIndex).iterator();
+            }
+        }
+
         DEBUG("Screen {} fully opened.", handler);
         var slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
         var outputSlotId = ScreenHandlerHelper.getFullOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
@@ -405,7 +405,7 @@ public class ItemIO implements ClientModInitializer {
         } else {
             if (this.heldStack.isEmpty()) {
                 DEBUG("Moving first found stack to our selected slot.");
-                int nonEmptySlotID = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
+                int nonEmptySlotID = ScreenHandlerHelper.getNonEmptySlotID(handler, ScreenHandlerHelper.InventoryType.OTHER, false);
                 if (nonEmptySlotID != -1) {
                     ScreenHandlerHelper.moveToOrShift(client, nonEmptySlotID, slotId);
                 }
