@@ -35,10 +35,10 @@
     }
   },
   "depends": {
-    "fabricloader": "*",
-    "fabric-api": "*",
-    "yet_another_config_lib_v3": "*",
     "minecraft": ">=${minecraft_version}",
-    "java": ">=17"
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": ">=${fabric_version}",
+    "yet_another_config_lib_v3": "*",
+    "java": ">=${java_version}"
   }
 }

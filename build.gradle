@@ -116,15 +116,17 @@ modrinth {
 
 processResources  {
     def modProperties = [
-            "mod_id": mod_id,
-            "mod_name": mod_name,
-            "mod_version": mod_version,
-            "mod_description": mod_description,
-            "mod_author": mod_author,
-            "mod_sources": mod_sources,
-            "mod_license": mod_license,
-            "loader_version": loader_version,
-            "minecraft_version": minecraft_version
+            "mod_id": project.mod_id,
+            "mod_name": project.mod_name,
+            "mod_version": project.mod_version,
+            "mod_description": project.mod_description,
+            "mod_author": project.mod_author,
+            "mod_sources": project.mod_sources,
+            "mod_license": project.mod_license,
+            "loader_version": project.loader_version,
+            "minecraft_version": project.minecraft_version,
+            "fabric_version": project.fabric_version,
+            "java_version": javaVersionNum
     ]
 
     inputs.properties(modProperties)
