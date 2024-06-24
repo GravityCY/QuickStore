@@ -3,6 +3,7 @@ package me.gravityio.itemio.helper;
 import me.gravityio.itemio.lib.PredicateRaycastContext;
 import me.gravityio.itemio.mixins.impl.HandledAccessor;
 import net.minecraft.block.WallSignBlock;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -10,6 +11,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
@@ -102,7 +104,8 @@ public class Helper {
 
     public static boolean isInventory(World world, BlockHitResult hitResult) {
         if (hitResult.getType() != HitResult.Type.BLOCK) return false;
-        return world.getBlockEntity(hitResult.getBlockPos()) instanceof Inventory;
+        BlockEntity blockEntity = world.getBlockEntity(hitResult.getBlockPos());
+        return blockEntity instanceof NamedScreenHandlerFactory && blockEntity instanceof Inventory;
     }
 
     /**

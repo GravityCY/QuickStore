@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import me.gravityio.itemio.helper.Helper;
 import me.gravityio.itemio.helper.RenderHelper;
 import me.gravityio.itemio.helper.ScreenHandlerHelper;
-import me.gravityio.itemio.lib.BlockRec;
 import me.gravityio.itemio.lib.keybind.KeybindManager;
 import me.gravityio.itemio.lib.keybind.KeybindWrapper;
 import net.fabricmc.api.ClientModInitializer;
@@ -65,7 +64,7 @@ public class ItemIO implements ClientModInitializer {
 
     private static final int TIMEOUT = 500;
 
-    public static boolean IS_DEBUG;
+    public static boolean IS_DEV;
     public static ItemIO INSTANCE;
 
     private final Set<BlockRec> inventoryBlocks = new HashSet<>();
@@ -98,7 +97,7 @@ public class ItemIO implements ClientModInitializer {
     // TODO: Compatibility: IRIS Mod Compatibility shaders
 
     public static void DEBUG(String message, Object... args) {
-        if (!IS_DEBUG) {
+        if (!IS_DEV) {
             return;
         }
 
@@ -109,7 +108,7 @@ public class ItemIO implements ClientModInitializer {
     public void onInitializeClient() {
         INSTANCE = this;
 
-        IS_DEBUG = FabricLoader.getInstance().isDevelopmentEnvironment();
+        IS_DEV = FabricLoader.getInstance().isDevelopmentEnvironment();
         KeybindManager.init();
 
         ModConfig.HANDLER.load();
@@ -227,7 +226,6 @@ public class ItemIO implements ClientModInitializer {
             Vec3d textPosition = targetPosition.subtract(camera.getPos());
             Vec3d cubePosition = targetPosition1.subtract(camera.getPos());
 
-
             VertexConsumer v = vc.getBuffer(RenderLayer.getTextBackgroundSeeThrough());
             matrices.push();
             matrices.translate(cubePosition.x, cubePosition.y, cubePosition.z);
@@ -263,6 +261,7 @@ public class ItemIO implements ClientModInitializer {
         RenderSystem.enableDepthTest();
         vc.draw();
         RenderSystem.disableDepthTest();
+
     }
 
     private void onTick(MinecraftClient client) {
@@ -270,7 +269,16 @@ public class ItemIO implements ClientModInitializer {
             this.tickItemIO(client);
         }
         if (this.waiting) {
-            client.player.setSneaking(false);
+            this.tickWaiting();
+            if (client.player.isSneaking()) {
+                client.player.setSneaking(false);
+            }
+        }
+    }
+
+    private void tickWaiting() {
+        if ((System.currentTimeMillis() - this.startWaiting) > TIMEOUT) {
+            this.clear();
         }
     }
 
@@ -304,9 +312,6 @@ public class ItemIO implements ClientModInitializer {
         }
 
         if (this.waiting || hit == null) {
-            if (this.waiting && (System.currentTimeMillis() - this.startWaiting) > TIMEOUT) {
-                this.clear();
-            }
             return;
         }
 
