@@ -4,29 +4,41 @@
   "name": "${mod_name}",
   "version": "${mod_version}",
   "description": "${mod_description}",
-  "authors": ["${mod_author}"],
-
+  "authors": [
+    "${mod_author}"
+  ],
   "contact": {
     "homepage": "${mod_sources}",
     "sources": "${mod_sources}",
     "issues": "${mod_sources}"
   },
   "license": "${mod_license}",
-  "icon": "assets/quickstore/icon.png",
-
+  "icon": "assets/itemio/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "me.gravityio.quickstore.QuickStoreMod"
+      "me.gravityio.itemio.ItemIO"
+    ],
+    "modmenu": [
+      "me.gravityio.itemio.compat.ModMenuApiImpl"
     ]
   },
   "mixins": [
-    "quickstore.mixins.json"
+    "itemio.mixins.json",
+    "itemio.compat.mixins.json"
   ],
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/Ef4Z22gnqj"
+      }
+    }
+  },
   "depends": {
-    "fabricloader": "*",
-    "fabric": "*",
-    "minecraft": "~${minecraft_version}",
-    "java": ">=17"
+    "minecraft": ">=${minecraft_version}",
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": ">=${fabric_version}",
+    "yet_another_config_lib_v3": "*",
+    "java": ">=${java_version}"
   }
 }

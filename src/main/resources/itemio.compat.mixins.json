@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "me.gravityio.itemio.mixins.compat",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "BlurModMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "category.itemio.name": "Item IO",
+  "key.itemio.store": "Store",
+  "key.itemio.increment": "Increment",
+
+  "messages.itemio.far_inventory": "§cSome inventories were too far away!",
+  "messages.itemio.toggle": "You are now selecting containers.",
+  "messages.itemio.cancel": "Cancelling!",
+
+  "yacl.itemio.title": "ItemIO",
+
+  "yacl.itemio.enable_mod.label": "Enable Mod",
+  "yacl.itemio.enable_mod.desc": "Whether to enable the mod.",
+
+  "yacl.itemio.inventory_operations.label": "Inventory Operations",
+  "yacl.itemio.inventory_operations.desc": "Whether to enable the functionality to start an operation in the inventory.",
+
+  "yacl.itemio.toggle_bind.label": "Toggle Bind",
+  "yacl.itemio.toggle_bind.desc": "Whether to toggle the bind.\n\n§lTip for Toggle Mode: §7You can cancel a selection with the `Escape` key",
+
+  "yacl.itemio.look_container.label": "Need to Look at Container",
+  "yacl.itemio.look_container.desc": "Whether you need to look at a container in order to be able to do operations.",
+
+  "yacl.itemio.animate_item.label": "Animate Item",
+  "yacl.itemio.animate_item.desc": "Whether to animate item and text.",
+
+  "yacl.itemio.animate_opacity.label": "Animate Opacity",
+  "yacl.itemio.animate_opacity.desc": "Whether to animate the opacity of the selection.",
+
+  "yacl.itemio.colour.label": "Outline Color",
+  "yacl.itemio.colour.desc": "The color to overlay over blocks when storing or extracting from an container."
+}
