@@ -1,6 +1,6 @@
 package me.gravityio.itemio.lib.keybind;
 
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.KeyMapping;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -8,26 +8,26 @@ import org.jetbrains.annotations.Nullable;
  * some useful callbacks etc...
  */
 public class KeybindWrapper {
-    public final KeyBinding bind;
+    public final KeyMapping bind;
     private Runnable whileRunnable;
     private Runnable pressedRunnable;
     private Runnable releasedRunnable;
     protected boolean workInScreen = false;
     protected boolean down;
 
-    public KeybindWrapper(KeyBinding bind) {
+    public KeybindWrapper(KeyMapping bind) {
         this(bind, null, null);
     }
 
-    public KeybindWrapper(KeyBinding bind, Runnable whileRunnable) {
+    public KeybindWrapper(KeyMapping bind, Runnable whileRunnable) {
         this(bind, whileRunnable, null);
     }
 
-    public KeybindWrapper(KeyBinding bind, Runnable whilePressed, Runnable pressedVisitor) {
+    public KeybindWrapper(KeyMapping bind, Runnable whilePressed, Runnable pressedVisitor) {
         this(bind, whilePressed, pressedVisitor, null);
     }
 
-    public KeybindWrapper(KeyBinding bind, @Nullable Runnable whileRunnable, @Nullable Runnable pressedRunnable, @Nullable Runnable releasedRunnable) {
+    public KeybindWrapper(KeyMapping bind, @Nullable Runnable whileRunnable, @Nullable Runnable pressedRunnable, @Nullable Runnable releasedRunnable) {
         this.bind = bind;
         this.whileRunnable = whileRunnable;
         this.pressedRunnable = pressedRunnable;
@@ -76,7 +76,7 @@ public class KeybindWrapper {
     }
 
     public boolean wasPressed() {
-        return this.bind.wasPressed();
+        return this.bind.consumeClick();
     }
 
     public static KeybindWrapper of(String translationKey, int code, String category) {
@@ -88,11 +88,11 @@ public class KeybindWrapper {
     }
 
     public static KeybindWrapper of(String translationKey, int code, String category, Runnable onPressed, Runnable isPressed) {
-        return new KeybindWrapper(new KeyBinding(translationKey, code, category), onPressed, isPressed);
+        return new KeybindWrapper(new KeyMapping(translationKey, code, category), onPressed, isPressed);
     }
 
     public static KeybindWrapper of(String translationKey, int code, String category, Runnable whilePressed, Runnable onPressed, Runnable onRelease) {
-        return new KeybindWrapper(new KeyBinding(translationKey, code, category), whilePressed, onPressed, onRelease);
+        return new KeybindWrapper(new KeyMapping(translationKey, code, category), whilePressed, onPressed, onRelease);
     }
 
 }

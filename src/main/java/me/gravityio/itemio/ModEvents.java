@@ -2,7 +2,7 @@ package me.gravityio.itemio;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.screen.ScreenHandler;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 public class ModEvents {
 
@@ -34,7 +34,7 @@ public class ModEvents {
     );
 
     public interface OnScreenFullyOpened {
-        void onOpened(ScreenHandler screen);
+        void onOpened(AbstractContainerMenu menu);
     }
 
     public interface OnKey {

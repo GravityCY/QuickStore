@@ -1,30 +1,31 @@
 package me.gravityio.itemio.lib;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiPredicate;
 
 /**
  * Custom raycast content in order to pass to the normal raycast function to make only Inventory Blocks pass
  */
-public class PredicateRaycastContext extends RaycastContext {
-    private final BiPredicate<BlockView, BlockPos> ignore;
+public class PredicateRaycastContext extends ClipContext {
+    private final BiPredicate<BlockGetter, BlockPos> ignore;
 
-    public PredicateRaycastContext(Vec3d start, Vec3d end, ShapeType shapeType, FluidHandling fluidHandling, Entity entity, BiPredicate<BlockView, BlockPos> ignore) {
+    public PredicateRaycastContext(Vec3 start, Vec3 end, Block shapeType, Fluid fluidHandling, Entity entity, BiPredicate<BlockGetter, BlockPos> ignore) {
         super(start, end, shapeType, fluidHandling, entity);
         this.ignore = ignore;
     }
 
     @Override
-    public VoxelShape getBlockShape(BlockState state, BlockView world, BlockPos pos) {
-        if (this.ignore.test(world, pos)) return VoxelShapes.empty();
+    public @NotNull VoxelShape getBlockShape(BlockState state, BlockGetter world, BlockPos pos) {
+        if (this.ignore.test(world, pos)) return Shapes.empty();
         return super.getBlockShape(state, world, pos);
     }
 }

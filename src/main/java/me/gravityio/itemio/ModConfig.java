@@ -10,9 +10,8 @@ import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import me.gravityio.itemio.helper.Helper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.awt.*;
 import java.nio.file.Path;
@@ -28,7 +27,7 @@ public class ModConfig {
 
     public static final ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler
             .createBuilder(ModConfig.class)
-            .id(Identifier.of(ItemIO.MOD_ID, "config"))
+            .id(ItemIO.getId("config"))
             .serializer(serializer ->
                     GsonConfigSerializerBuilder.create(serializer)
                             .setPath(PATH)
@@ -42,8 +41,8 @@ public class ModConfig {
         String descriptionKey = "yacl.%s.%s.desc".formatted(modid, name);
 
         return Option.<T>createBuilder()
-                .name(Text.translatable(labelKey))
-                .description(OptionDescription.of(Text.translatable(descriptionKey)))
+                .name(Component.translatable(labelKey))
+                .description(OptionDescription.of(Component.translatable(descriptionKey)))
                 .controller(controller)
                 .binding(def, getter, setter);
     }
@@ -121,7 +120,7 @@ public class ModConfig {
 
     public static Screen getScreen(Screen parent) {
         return YetAnotherConfigLib.create(HANDLER, (defaults, config, builder) -> {
-            builder.title(Text.translatable(TITLE));
+            builder.title(Component.translatable(TITLE));
 
             Function<Option<Boolean>, ControllerBuilder<Boolean>> onOffCont = opt -> BooleanControllerBuilder.create(opt).coloured(true).onOffFormatter();
 
@@ -170,7 +169,7 @@ public class ModConfig {
             ).build();
 
             var main = ConfigCategory.createBuilder()
-                    .name(Text.translatable(TITLE))
+                    .name(Component.translatable(TITLE))
                     .option(enableModOpt)
                     .option(inventoryOpsOpt)
                     .option(toggleBind)

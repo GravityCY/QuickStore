@@ -1,8 +1,8 @@
 package me.gravityio.itemio.lib.keybind;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -26,13 +26,13 @@ public class KeybindManager {
         }
     }
 
-    public static void tick(MinecraftClient client) {
-        var handle = client.getWindow().getHandle();
+    public static void tick(Minecraft client) {
+        var handle = client.getWindow().getWindow();
         for (KeybindWrapper bind : binds) {
-            if (!bind.workInScreen && client.currentScreen != null) continue;
+            if (!bind.workInScreen && client.screen != null) continue;
 
             boolean prevDown = bind.down;
-            bind.down = InputUtil.isKeyPressed(handle, KeyBindingHelper.getBoundKeyOf(bind.bind).getCode());
+            bind.down = InputConstants.isKeyDown(handle, KeyBindingHelper.getBoundKeyOf(bind.bind).getValue());
             if (bind.down)
                 bind.internalWhilePressed();
             if (bind.down && !prevDown)

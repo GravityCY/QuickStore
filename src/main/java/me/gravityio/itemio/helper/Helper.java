@@ -2,24 +2,24 @@ package me.gravityio.itemio.helper;
 
 import me.gravityio.itemio.lib.PredicateRaycastContext;
 import me.gravityio.itemio.mixins.impl.HandledAccessor;
-import net.minecraft.block.WallSignBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.world.Container;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.WallSignBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 public class Helper {
@@ -77,15 +77,15 @@ public class Helper {
     }
 
     public static BlockHitResult raycast(Entity entity, float tickDelta, float maxDistance) {
-        World world = entity.getWorld();
-        Vec3d cameraPos = entity.getCameraPosVec(tickDelta);
-        Vec3d cameraForward = entity.getRotationVec(tickDelta);
+        Level world = entity.level();
+        Vec3 cameraPos = entity.getEyePosition(tickDelta);
+        Vec3 cameraForward = entity.getViewVector(tickDelta);
 
 
-        Vec3d cameraEnd = cameraPos.add(cameraForward.x * maxDistance, cameraForward.y * maxDistance, cameraForward.z * maxDistance);
-        return world.raycast(new PredicateRaycastContext(
+        Vec3 cameraEnd = cameraPos.add(cameraForward.x * maxDistance, cameraForward.y * maxDistance, cameraForward.z * maxDistance);
+        return world.clip(new PredicateRaycastContext(
                 cameraPos, cameraEnd,
-                RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE,
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE,
                 entity,
                 (w, p) -> w.getBlockState(p).getBlock() instanceof WallSignBlock
         ));
@@ -94,18 +94,18 @@ public class Helper {
     /**
      * Gets the inventory the player is looking at
      */
-    public static BlockHitResult getLookingAtInventory(MinecraftClient client) {
-        var hit = Helper.raycast(client.cameraEntity, client.getRenderTickCounter().getTickDelta(true), (float) client.player.getBlockInteractionRange());
-        if (!Helper.isInventory(client.world, hit)) {
+    public static BlockHitResult getLookingAtInventory(Minecraft client) {
+        var hit = Helper.raycast(client.cameraEntity, client.getTimer().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
+        if (!Helper.isInventory(client.level, hit)) {
             return null;
         }
         return hit;
     }
 
-    public static boolean isInventory(World world, BlockHitResult hitResult) {
+    public static boolean isInventory(Level world, BlockHitResult hitResult) {
         if (hitResult.getType() != HitResult.Type.BLOCK) return false;
         BlockEntity blockEntity = world.getBlockEntity(hitResult.getBlockPos());
-        return blockEntity instanceof NamedScreenHandlerFactory && blockEntity instanceof Inventory;
+        return blockEntity instanceof MenuProvider && blockEntity instanceof Container;
     }
 
     /**
@@ -117,22 +117,22 @@ public class Helper {
      * @param clickSlotId the ID of the clicked slot
      * @return the clicked item stack and the cursor item stack
      */
-    public static ClickData leftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
-        var screen = player.currentScreenHandler;
-        manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.PICKUP, player);
-        var click = screen.getSlot(clickSlotId).getStack().copy();
-        var cursor = screen.getCursorStack().copy();
+    public static ClickData leftClickSlot(MultiPlayerGameMode manager, Player player, int clickSlotId) {
+        var screen = player.containerMenu;
+        manager.handleInventoryMouseClick(screen.containerId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, ClickType.PICKUP, player);
+        var click = screen.getSlot(clickSlotId).getItem().copy();
+        var cursor = screen.getCarried().copy();
         return new ClickData(click, cursor);
     }
 
-    public static void quickcraftSlots(ClientPlayerInteractionManager manager, PlayerEntity player, Slot[] clickSlots, int button) {
-//					this.onMouseClick(slot2, slot2.id, ScreenHandler.packQuickCraftData(1, this.heldButtonType), SlotActionType.QUICK_CRAFT);
-        var screen = player.currentScreenHandler;
-        manager.clickSlot(screen.syncId, -999, ScreenHandler.packQuickCraftData(0, button), SlotActionType.QUICK_CRAFT, player);
+    public static void quickcraftSlots(MultiPlayerGameMode manager, Player player, Slot[] clickSlots, int button) {
+//					this.onMouseClick(slot2, slot2.id, AbstractContainerMenu.getQuickCraftMask(1, this.heldButtonType), ClickType.QUICK_CRAFT);
+        var screen = player.containerMenu;
+        manager.handleInventoryMouseClick(screen.containerId, -999, AbstractContainerMenu.getQuickcraftMask(0, button), ClickType.QUICK_CRAFT, player);
         for (Slot clickSlot : clickSlots) {
-            manager.clickSlot(screen.syncId, clickSlot.id, ScreenHandler.packQuickCraftData(1, button), SlotActionType.QUICK_CRAFT, player);
+            manager.handleInventoryMouseClick(screen.containerId, clickSlot.index, AbstractContainerMenu.getQuickcraftMask(1, button), ClickType.QUICK_CRAFT, player);
         }
-        manager.clickSlot(screen.syncId, -999, ScreenHandler.packQuickCraftData(2, button), SlotActionType.QUICK_CRAFT, player);
+        manager.handleInventoryMouseClick(screen.containerId, -999, AbstractContainerMenu.getQuickcraftMask(2, button), ClickType.QUICK_CRAFT, player);
     }
 
     /**
@@ -144,11 +144,11 @@ public class Helper {
      * @param clickSlotId the ID of the clicked slot
      * @return the clicked item stack and the cursor item stack
      */
-    public static ClickData rightClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
-        var screen = player.currentScreenHandler;
-        manager.clickSlot(screen.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_2, SlotActionType.PICKUP, player);
-        var click = screen.getSlot(clickSlotId).getStack().copy();
-        var cursor = screen.getCursorStack().copy();
+    public static ClickData rightClickSlot(MultiPlayerGameMode manager, Player player, int clickSlotId) {
+        var screen = player.containerMenu;
+        manager.handleInventoryMouseClick(screen.containerId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_2, ClickType.PICKUP, player);
+        var click = screen.getSlot(clickSlotId).getItem().copy();
+        var cursor = screen.getCarried().copy();
         return new ClickData(click, cursor);
     }
 
@@ -160,9 +160,9 @@ public class Helper {
      * @param clickSlotId the ID of the clicked slot
      * @return the stack obtained from the clicked slot
      */
-    public static ItemStack shiftClickSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int clickSlotId) {
-        manager.clickSlot(player.currentScreenHandler.syncId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, SlotActionType.QUICK_MOVE, player);
-        return player.currentScreenHandler.getSlot(clickSlotId).getStack();
+    public static ItemStack shiftClickSlot(MultiPlayerGameMode manager, Player player, int clickSlotId) {
+        manager.handleInventoryMouseClick(player.containerMenu.containerId, clickSlotId, GLFW.GLFW_MOUSE_BUTTON_1, ClickType.QUICK_MOVE, player);
+        return player.containerMenu.getSlot(clickSlotId).getItem();
     }
 
     /**
@@ -170,17 +170,17 @@ public class Helper {
      *
      * @param manager     the client player interaction manager
      * @param player      the player entity
-     * @param fromSlotId  the ID of the slot to swap from (The actual ID of the slot in the ScreenHandler)
+     * @param fromSlotId  the ID of the slot to swap from (The actual ID of the slot in the AbstractContainerMenu)
      * @param toSlotIndex the index of the slot to swap to (the slot in the player's inventory)
      */
-    public static void swapSlot(ClientPlayerInteractionManager manager, PlayerEntity player, int fromSlotId, int toSlotIndex) {
-        manager.clickSlot(player.currentScreenHandler.syncId, fromSlotId, toSlotIndex, SlotActionType.SWAP, player);
+    public static void swapSlot(MultiPlayerGameMode manager, Player player, int fromSlotId, int toSlotIndex) {
+        manager.handleInventoryMouseClick(player.containerMenu.containerId, fromSlotId, toSlotIndex, ClickType.SWAP, player);
     }
 
-    public static ClickData simulateLeftClick(PlayerEntity player, int clickSlotId) {
-        var screen = player.currentScreenHandler;
-        var click = screen.getSlot(clickSlotId).getStack();
-        var cursor = screen.getCursorStack();
+    public static ClickData simulateLeftClick(Player player, int clickSlotId) {
+        var screen = player.containerMenu;
+        var click = screen.getSlot(clickSlotId).getItem();
+        var cursor = screen.getCarried();
 
         ItemStack clickOut;
         ItemStack cursorOut;
@@ -190,10 +190,10 @@ public class Helper {
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.areItemsAndComponentsEqual(click, cursor)) {
+            if (ItemStack.isSameItemSameComponents(click, cursor)) {
                 int total = clickOut.getCount() + cursorOut.getCount();
-                int countClick = Math.min(total, clickOut.getMaxCount());
-                int countCursor = Math.max(total - clickOut.getMaxCount(), 0);
+                int countClick = Math.min(total, clickOut.getMaxStackSize());
+                int countCursor = Math.max(total - clickOut.getMaxStackSize(), 0);
 
                 clickOut.setCount(countClick);
                 cursorOut.setCount(countCursor);
@@ -213,10 +213,10 @@ public class Helper {
      * @param clickSlotId the slot ID of the clicked item
      * @return the item stack obtained from the clicked slot
      */
-    public static ClickData simulateRightClick(PlayerEntity player, int clickSlotId) {
-        var screen = player.currentScreenHandler;
-        var click = screen.getSlot(clickSlotId).getStack();
-        var cursor = screen.getCursorStack();
+    public static ClickData simulateRightClick(Player player, int clickSlotId) {
+        var screen = player.containerMenu;
+        var click = screen.getSlot(clickSlotId).getItem();
+        var cursor = screen.getCarried();
 
         ItemStack clickOut;
         ItemStack cursorOut;
@@ -228,33 +228,33 @@ public class Helper {
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.areItemsAndComponentsEqual(click, cursor)) {
-                cursorOut.decrement(1);
-                clickOut.increment(1);
+            if (ItemStack.isSameItemSameComponents(click, cursor)) {
+                cursorOut.shrink(1);
+                clickOut.grow(1);
             }
         }
         return new ClickData(clickOut, cursorOut);
     }
 
-    public static HoverData getHoverStack(MinecraftClient client) {
-        if (!(client.currentScreen instanceof HandledScreen<?> handled)) return null;
+    public static HoverData getHoverStack(Minecraft client) {
+        if (!(client.screen instanceof AbstractContainerScreen<?> handled)) return null;
         HandledAccessor accessor = (HandledAccessor) handled;
         HoverData data = null;
 
-        int mx = (int)(client.mouse.getX() * (double)client.getWindow().getScaledWidth() / (double)client.getWindow().getWidth());
-        int my = (int)(client.mouse.getY() * (double)client.getWindow().getScaledHeight() / (double)client.getWindow().getHeight());
+        int mx = (int)(client.mouseHandler.xpos() * (double)client.getWindow().getGuiScaledWidth() / (double)client.getWindow().getWidth());
+        int my = (int)(client.mouseHandler.ypos() * (double)client.getWindow().getGuiScaledHeight() / (double)client.getWindow().getHeight());
 
-        ScreenHandler handler = handled.getScreenHandler();
+        AbstractContainerMenu handler = handled.getMenu();
         for (Slot slot : handler.slots) {
             if (accessor.itemio$isPointOverSlot(slot, mx, my)) {
-                data = new HoverData(handler, handled, slot, slot.id, slot.getIndex(), slot.getStack(), mx, my);
+                data = new HoverData(handler, handled, slot, slot.index, slot.getContainerSlot(), slot.getItem(), mx, my);
                 break;
             }
         }
         return data;
     }
 
-    public record HoverData(ScreenHandler handler, HandledScreen<?> screen, Slot slot, int slotId, int slotIndex, ItemStack stack, int x, int y) {}
+    public record HoverData(AbstractContainerMenu handler, AbstractContainerScreen<?> screen, Slot slot, int slotId, int slotIndex, ItemStack stack, int x, int y) {}
 
     /**
      * A record containing the stack you clicked and the stack in your cursor

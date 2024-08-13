@@ -7,6 +7,6 @@ import me.gravityio.itemio.ModConfig;
 public class ModMenuApiImpl implements ModMenuApi {
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return parent -> ModConfig.getScreen(parent);
+        return ModConfig::getScreen;
     }
 }

@@ -1,11 +1,10 @@
 package me.gravityio.itemio;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Objects;
 
@@ -13,10 +12,10 @@ public record BlockRec(BlockPos pos, Direction side) {
 
     private static final int MAX_BREAK_SQUARED_DISTANCE = 36;
 
-    public static BlockRec of(World world, PlayerEntity player, BlockPos pos, Direction side) {
-        if (!world.getBlockState(pos.offset(side)).isAir()) {
-            BlockPos diff = player.getBlockPos().subtract(pos);
-            side = Direction.getFacing(diff.getX(), diff.getY(), diff.getZ());
+    public static BlockRec of(Level world, Player player, BlockPos pos, Direction side) {
+        if (!world.getBlockState(pos.relative(side)).isAir()) {
+            BlockPos diff = player.blockPosition().subtract(pos);
+            side = Direction.getNearest(diff.getX(), diff.getY(), diff.getZ());
         }
         return new BlockRec(pos, side);
     }
@@ -36,15 +35,15 @@ public record BlockRec(BlockPos pos, Direction side) {
         return Objects.hash(pos);
     }
 
-    public BlockHitResult toBlockHitResult() {
-        return new BlockHitResult(pos.toCenterPos(), side, pos, false);
+    public net.minecraft.world.phys.BlockHitResult toBlockHitResult() {
+        return new net.minecraft.world.phys.BlockHitResult(pos.getCenter(), side, pos, false);
     }
 
-    public Vec3d getParticlePosition() {
-        return pos.toCenterPos().offset(side, 0.75f);
+    public Vec3 getParticlePosition() {
+        return pos().getCenter().relative(side, 0.75f);
     }
 
-    public boolean isTooFar(PlayerEntity player) {
-        return player.getEyePos().squaredDistanceTo(pos.toCenterPos()) > MAX_BREAK_SQUARED_DISTANCE;
+    public boolean isTooFar(Player player) {
+        return player.getEyePosition().distanceToSqr(pos.getCenter()) > MAX_BREAK_SQUARED_DISTANCE;
     }
 }
