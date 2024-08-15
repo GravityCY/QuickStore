@@ -1,7 +1,7 @@
 package me.gravityio.itemio.helper;
 
 import me.gravityio.itemio.lib.PredicateRaycastContext;
-import me.gravityio.itemio.mixins.impl.HandledAccessor;
+import me.gravityio.itemio.mixins.mod.HandledAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -23,6 +23,13 @@ import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 public class Helper {
+    public static boolean isExactlyTheSame(ItemStack a, ItemStack b) {
+        //? if >=1.20.5 {
+        /*return ItemStack.isSameItemSameComponents(a, b);
+        *///?} else {
+        return ItemStack.matches(a, b);
+        //?}
+    }
 
     public static byte getByteAt(int value, int index, int size, boolean left) {
         index = left ? size - 1 - index  : index;
@@ -95,7 +102,13 @@ public class Helper {
      * Gets the inventory the player is looking at
      */
     public static BlockHitResult getLookingAtInventory(Minecraft client) {
-        var hit = Helper.raycast(client.cameraEntity, client.getTimer().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
+        //? if >=1.21 {
+        /*var hit = Helper.raycast(client.cameraEntity, client.getTimer().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
+        *///?} elif >=1.20.5 {
+        /*var hit = Helper.raycast(client.cameraEntity, client.getDeltaFrameTime(), (float) client.player.blockInteractionRange());
+        *///?} else {
+        var hit = Helper.raycast(client.cameraEntity, client.getDeltaFrameTime(), client.gameMode.getPickRange());
+        //?}
         if (!Helper.isInventory(client.level, hit)) {
             return null;
         }
@@ -190,7 +203,7 @@ public class Helper {
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.isSameItemSameComponents(click, cursor)) {
+            if (Helper.isExactlyTheSame(click, cursor)) {
                 int total = clickOut.getCount() + cursorOut.getCount();
                 int countClick = Math.min(total, clickOut.getMaxStackSize());
                 int countCursor = Math.max(total - clickOut.getMaxStackSize(), 0);
@@ -228,7 +241,7 @@ public class Helper {
         } else {
             clickOut = click.copy();
             cursorOut = cursor.copy();
-            if (ItemStack.isSameItemSameComponents(click, cursor)) {
+            if (Helper.isExactlyTheSame(click, cursor)) {
                 cursorOut.shrink(1);
                 clickOut.grow(1);
             }

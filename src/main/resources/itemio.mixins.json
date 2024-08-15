@@ -1,8 +1,8 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "me.gravityio.itemio.mixins.impl",
-  "compatibilityLevel": "JAVA_21",
+  "package": "me.gravityio.itemio.mixins.mod",
+  "compatibilityLevel": "JAVA_${java_version}",
   "client": [
     "CancelSoundMixin",
     "HandledAccessor",

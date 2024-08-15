@@ -1,4 +1,4 @@
-package me.gravityio.itemio.mixins.impl;
+package me.gravityio.itemio.mixins.mod;
 
 import me.gravityio.itemio.ModEvents;
 import net.minecraft.client.KeyboardHandler;

@@ -10,6 +10,7 @@ plugins {
     id "com.modrinth.minotaur" version "2.+"
     id 'net.darkhax.curseforgegradle' version "1.1.24"
     id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
+    id "dev.kikugie.j52j" version "1.0.2"
 }
 
 version = "${rootProject.mod_version}+${project.name}"
@@ -53,10 +54,17 @@ repositories {
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots/"
     }
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
 }
 
 project.dependencies.add("minecraft", "com.mojang:minecraft:${project.name}")
-project.dependencies.add("mappings", loom.officialMojangMappings())
+project.dependencies.add("mappings", loom.layered() {
+    officialMojangMappings()
+    parchment("org.parchmentmc.data:parchment-${project.parchment_version_mc}:${project.parchment_version}@zip")
+})
 project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${rootProject.loader_version}")
 // Optional
 project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
@@ -167,10 +175,20 @@ processResources  {
             "java_version": javaVersionNum
     ]
 
+    def mixinProperties = [
+            "java_version": javaVersionNum
+    ]
+
     inputs.properties(modProperties)
 
     filesMatching("fabric.mod.json") {
         expand modProperties
+    }
+    filesMatching("itemio.compat.mixins.json") {
+        expand mixinProperties
+    }
+    filesMatching("itemio.mixins.json") {
+        expand mixinProperties
     }
 }
 
@@ -186,6 +204,7 @@ java {
 }
 
 jar {
+
     from("LICENSE") {
         rename { "${it}_${base.archivesName.get()}" }
     }

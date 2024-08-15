@@ -51,36 +51,49 @@ public class RenderHelper {
         }
     }
 
-    public static void renderCube(VertexConsumer v, Matrix4f matrix, float width, float height, float depth, int r, int g, int b, int a, int light) {
-        v.addVertex(matrix, -width, -height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, -height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, height, depth).setColor(r, g, b, a).setLight(light);
+    public static void renderCube(VertexConsumer v, Matrix4f matrix, float width, float height, float depth, int r, int g, int b, int a, int lightValue) {
+        all(v, matrix, -width, -height, depth, r, g, b, a, lightValue);
+        all(v, matrix, width, -height, depth, r, g, b, a, lightValue);
+        all(v, matrix, width, height, depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, height, depth, r, g, b, a, lightValue);
 
-        v.addVertex(matrix, width, -height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, -height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, height, -depth).setColor(r, g, b, a).setLight(light);
+        all(v, matrix, width, -height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, -height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, width, height, -depth, r, g, b, a, lightValue);
 
-        v.addVertex(matrix, -width, -height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, -height, -depth).setColor(r, g, b, a).setLight(light);
+        all(v, matrix, -width, -height, depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, height, depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, -height, -depth, r, g, b, a, lightValue);
 
-        v.addVertex(matrix, width, -height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, -height, depth).setColor(r, g, b, a).setLight(light);
+        all(v, matrix, width, -height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, width, height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, width, height, depth, r, g, b, a, lightValue);
+        all(v, matrix, width, -height, depth, r, g, b, a, lightValue);
 
-        v.addVertex(matrix, -width, height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, height, -depth).setColor(r, g, b, a).setLight(light);
+        all(v, matrix, -width, height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, height, depth, r, g, b, a, lightValue);
+        all(v, matrix, width, height, depth, r, g, b, a, lightValue);
+        all(v, matrix, width, height, -depth, r, g, b, a, lightValue);
 
-        v.addVertex(matrix, width, -height, -depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, width, -height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, -height, depth).setColor(r, g, b, a).setLight(light);
-        v.addVertex(matrix, -width, -height, -depth).setColor(r, g, b, a).setLight(light);
+        all(v, matrix, width, -height, -depth, r, g, b, a, lightValue);
+        all(v, matrix, width, -height, depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, -height, depth, r, g, b, a, lightValue);
+        all(v, matrix, -width, -height, -depth, r, g, b, a, lightValue);
+    }
+
+    private static void all(VertexConsumer v, Matrix4f m, float width, float height, float depth, int r, int g, int b, int a, int lightValue) {
+        //? if >=1.21 {
+        /*v.addVertex(m, width, height, depth);
+        v.setColor(r, g, b, a);
+        v.setLight(lightValue);
+         *///?} else {
+        v.vertex(m, width, height, depth);
+        v.color(r, g, b, a);
+        v.uv2(lightValue);
+        v.endVertex();
+        //?}
     }
 
     public enum Billboard {

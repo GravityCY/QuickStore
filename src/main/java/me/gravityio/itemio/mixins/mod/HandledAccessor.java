@@ -1,4 +1,4 @@
-package me.gravityio.itemio.mixins.impl;
+package me.gravityio.itemio.mixins.mod;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;

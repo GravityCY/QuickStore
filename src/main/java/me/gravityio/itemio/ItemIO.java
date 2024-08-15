@@ -73,7 +73,7 @@ public class ItemIO implements ClientModInitializer {
     public static ItemIO INSTANCE;
 
     private final Set<BlockRec> inventoryBlocks = new HashSet<>();
-    private net.minecraft.world.item.ItemStack heldStack = net.minecraft.world.item.ItemStack.EMPTY;
+    private ItemStack heldStack = ItemStack.EMPTY;
     private BlockRec currentInventoryBlock;
     private Iterator<BlockRec> inventoryBlockIterator;
     private Iterator<Integer> splitSlotIndexIterator;
@@ -89,7 +89,11 @@ public class ItemIO implements ClientModInitializer {
     private long startWaiting;
 
     public static ResourceLocation getId(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+        //? if >=1.21 {
+        /*return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+        *///?} else {
+        return new ResourceLocation(MOD_ID, path);
+        //?}
     }
 
     /**
@@ -197,7 +201,7 @@ public class ItemIO implements ClientModInitializer {
             if (Helper.getLookingAtInventory(client) == null) return;
         }
 
-        net.minecraft.world.item.ItemStack item;
+        ItemStack item;
         if (this.fromScreen) {
             item = client.player.getInventory().items.get(this.slotIndex);
         } else {
@@ -259,7 +263,9 @@ public class ItemIO implements ClientModInitializer {
 
                 matrices.pushPose();
                 matrices.mulPose(camera.rotation());
-                matrices.mulPose(Axis.YP.rotationDegrees(180));
+                //? if >=1.21 {
+                /*matrices.mulPose(Axis.YP.rotationDegrees(180));
+                *///?}
                 matrices.scale(0.5f, 0.5f, 0.5f);
                 RenderHelper.renderText(matrices, client.font, vc, Component.literal(String.valueOf(split)), 0.5f, 0xffffffff);
                 matrices.popPose();
@@ -410,7 +416,7 @@ public class ItemIO implements ClientModInitializer {
         DEBUG("Screen {} fully opened.", handler);
         var slotId = ScreenHandlerHelper.findIndexSlotID(this.slotIndex, handler, ScreenHandlerHelper.InventoryType.PLAYER);
         var outputSlotId = ScreenHandlerHelper.getFullOutputSlotID(handler, ScreenHandlerHelper.InventoryType.OTHER);
-        if (outputSlotId != -1 && (this.heldStack.isEmpty() || net.minecraft.world.item.ItemStack.isSameItemSameComponents(handler.getSlot(outputSlotId).getItem(), this.heldStack))) {
+        if (outputSlotId != -1 && (this.heldStack.isEmpty() || Helper.isExactlyTheSame(handler.getSlot(outputSlotId).getItem(), this.heldStack))) {
             DEBUG("Moving items found in the output slot into our selected slot.");
             ScreenHandlerHelper.moveToOrShift(client, outputSlotId, slotId);
         } else {
@@ -449,7 +455,7 @@ public class ItemIO implements ClientModInitializer {
             }
 
             if (this.doRestock() && client.player.getMainHandItem().isEmpty()) {
-                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.containerMenu, ScreenHandlerHelper.InventoryType.PLAYER, ItemStack::isSameItemSameComponents);
+                int foundSlotId = ScreenHandlerHelper.findSlotID(this.heldStack, client.player.containerMenu, ScreenHandlerHelper.InventoryType.PLAYER, Helper::isExactlyTheSame);
                 DEBUG("Restocking item {} found at {}", this.heldStack, foundSlotId);
                 if (foundSlotId != -1) {
                     Helper.swapSlot(client.gameMode, client.player, foundSlotId, this.slotIndex);

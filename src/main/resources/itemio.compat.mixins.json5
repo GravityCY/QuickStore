@@ -2,9 +2,11 @@
   "required": true,
   "minVersion": "0.8",
   "package": "me.gravityio.itemio.mixins.compat",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_${java_version}",
   "client": [
-    "BlurModMixin"
+    //? if >=1.21 {
+    /*"StopBlurMixin"
+    *///?}
   ],
   "injectors": {
     "defaultRequire": 1
