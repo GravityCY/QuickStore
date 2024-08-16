@@ -25,10 +25,10 @@ import org.lwjgl.glfw.GLFW;
 public class Helper {
     public static boolean isExactlyTheSame(ItemStack a, ItemStack b) {
         //? if >=1.20.5 {
-        /*return ItemStack.isSameItemSameComponents(a, b);
-        *///?} else {
-        return ItemStack.matches(a, b);
-        //?}
+        return ItemStack.isSameItemSameComponents(a, b);
+        //?} else {
+        /*return ItemStack.matches(a, b);
+        *///?}
     }
 
     public static byte getByteAt(int value, int index, int size, boolean left) {
@@ -103,12 +103,12 @@ public class Helper {
      */
     public static BlockHitResult getLookingAtInventory(Minecraft client) {
         //? if >=1.21 {
-        /*var hit = Helper.raycast(client.cameraEntity, client.getTimer().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
-        *///?} elif >=1.20.5 {
+        var hit = Helper.raycast(client.cameraEntity, client.getTimer().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
+        //?} elif >=1.20.5 {
         /*var hit = Helper.raycast(client.cameraEntity, client.getDeltaFrameTime(), (float) client.player.blockInteractionRange());
         *///?} else {
-        var hit = Helper.raycast(client.cameraEntity, client.getDeltaFrameTime(), client.gameMode.getPickRange());
-        //?}
+        /*var hit = Helper.raycast(client.cameraEntity, client.getDeltaFrameTime(), client.gameMode.getPickRange());
+        *///?}
         if (!Helper.isInventory(client.level, hit)) {
             return null;
         }

@@ -90,10 +90,10 @@ public class ItemIO implements ClientModInitializer {
 
     public static ResourceLocation getId(String path) {
         //? if >=1.21 {
-        /*return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
-        *///?} else {
-        return new ResourceLocation(MOD_ID, path);
-        //?}
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+        //?} else {
+        /*return new ResourceLocation(MOD_ID, path);
+        *///?}
     }
 
     /**
@@ -264,8 +264,8 @@ public class ItemIO implements ClientModInitializer {
                 matrices.pushPose();
                 matrices.mulPose(camera.rotation());
                 //? if >=1.21 {
-                /*matrices.mulPose(Axis.YP.rotationDegrees(180));
-                *///?}
+                matrices.mulPose(Axis.YP.rotationDegrees(180));
+                //?}
                 matrices.scale(0.5f, 0.5f, 0.5f);
                 RenderHelper.renderText(matrices, client.font, vc, Component.literal(String.valueOf(split)), 0.5f, 0xffffffff);
                 matrices.popPose();

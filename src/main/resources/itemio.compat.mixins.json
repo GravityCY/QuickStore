@@ -4,9 +4,7 @@
   "package": "me.gravityio.itemio.mixins.compat",
   "compatibilityLevel": "JAVA_${java_version}",
   "client": [
-    //? if >=1.21 {
-    /*"StopBlurMixin"
-    *///?}
+    "StopBlurMixin"
   ],
   "injectors": {
     "defaultRequire": 1

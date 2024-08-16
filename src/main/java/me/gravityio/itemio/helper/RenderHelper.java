@@ -85,15 +85,15 @@ public class RenderHelper {
 
     private static void all(VertexConsumer v, Matrix4f m, float width, float height, float depth, int r, int g, int b, int a, int lightValue) {
         //? if >=1.21 {
-        /*v.addVertex(m, width, height, depth);
+        v.addVertex(m, width, height, depth);
         v.setColor(r, g, b, a);
         v.setLight(lightValue);
-         *///?} else {
-        v.vertex(m, width, height, depth);
+         //?} else {
+        /*v.vertex(m, width, height, depth);
         v.color(r, g, b, a);
         v.uv2(lightValue);
         v.endVertex();
-        //?}
+        *///?}
     }
 
     public enum Billboard {

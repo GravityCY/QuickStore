@@ -10,7 +10,7 @@ plugins {
     id "com.modrinth.minotaur" version "2.+"
     id 'net.darkhax.curseforgegradle' version "1.1.24"
     id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
-    id "dev.kikugie.j52j" version "1.0.2"
+//    id "dev.kikugie.j52j" version "1.0.2"
 }
 
 version = "${rootProject.mod_version}+${project.name}"
@@ -204,7 +204,6 @@ java {
 }
 
 jar {
-
     from("LICENSE") {
         rename { "${it}_${base.archivesName.get()}" }
     }

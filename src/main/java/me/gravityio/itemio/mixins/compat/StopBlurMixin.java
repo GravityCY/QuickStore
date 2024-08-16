@@ -8,16 +8,16 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-//? if >=1.21 {
-/*@Mixin(Screen.class)
+@Mixin(Screen.class)
 public class StopBlurMixin {
 
+    //? if >=1.21 {
     @Inject(method = "renderBlurredBackground", at = @At("HEAD"), cancellable = true)
     private void itemio$applyBlurToHandledScreen(float delta, CallbackInfo ci) {
         var screen = (Screen) (Object) this;
         if (!ItemIO.INSTANCE.waiting || !(screen instanceof AbstractContainerScreen<?>)) return;
         ci.cancel();
     }
+    //?}
 
 }
-*///?}
