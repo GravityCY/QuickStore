@@ -117,7 +117,7 @@ publishMods {
     modLoaders.add("fabric")
     changelog = rootProject.changelog
     type = STABLE
-    displayName = "$rootProject.mod_name+$project.version"
+    displayName = "$rootProject.mod_name $project.version"
 
     modrinth {
         accessToken = providers.environmentVariable("MODRINTH_UPLOAD")
