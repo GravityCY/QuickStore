@@ -1,5 +1,4 @@
 import groovy.json.JsonSlurper
-import net.darkhax.curseforgegradle.TaskPublishCurseForge
 
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -7,9 +6,8 @@ import java.net.http.HttpResponse
 
 plugins {
     id "fabric-loom" version "1.7-SNAPSHOT"
-    id "com.modrinth.minotaur" version "2.+"
-    id 'net.darkhax.curseforgegradle' version "1.1.24"
     id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
+    id "me.modmuss50.mod-publish-plugin" version "0.6.3"
 //    id "dev.kikugie.j52j" version "1.0.2"
 }
 
@@ -114,48 +112,39 @@ tasks.register("depVersions") {
     }
 }
 
-tasks.register("publishMod") {
-    group = "publishing"
+publishMods {
+    file = remapJar.archiveFile
+    modLoaders.add("fabric")
+    changelog = rootProject.changelog
+    type = STABLE
+    displayName = "$rootProject.mod_name+$project.version"
 
-    dependsOn "publishCurseForge"
-    dependsOn "modrinth"
-}
+    modrinth {
+        accessToken = providers.environmentVariable("MODRINTH_UPLOAD")
+        projectId = rootProject.modrinth_id
 
-tasks.register('publishCurseForge', TaskPublishCurseForge) {
-    disableVersionDetection()
+        supportedVersions.forEach {
+            minecraftVersions.add(it)
+        }
 
-    group = "publishing"
-    apiToken = System.getenv("CURSEFORGE_UPLOAD")
-
-    def mainFile = upload(rootProject.curseforge_id, remapJar)
-    mainFile.displayName = "${rootProject.mod_name} ${project.version}"
-    mainFile.changelog = rootProject.changelog
-    supportedVersions.each {
-        mainFile.addGameVersion(it)
+        requires("fabric-api", "yacl")
+        optional("modmenu")
     }
-    mainFile.addEnvironment("Client")
-    mainFile.addModLoader("Fabric")
-    mainFile.releaseType = "release"
-    mainFile.addJavaVersion("Java ${javaVersionNum}")
 
-    mainFile.addRequirement("fabric-api")
-    mainFile.addRequirement("yacl")
-    mainFile.addOptional("modmenu")
-}
+    curseforge {
+        accessToken = providers.environmentVariable("CURSEFORGE_UPLOAD")
+        projectId = rootProject.curseforge_id
+        projectSlug = "itemio"
 
-modrinth {
-    token = System.getenv("MODRINTH_UPLOAD")
-    projectId = rootProject.modrinth_id
-    versionName = "${rootProject.mod_name} ${project.version}"
-    versionNumber = project.version
-    uploadFile = remapJar
-    gameVersions = supportedVersions
-    loaders = ["fabric"]
-    delegate.changelog = rootProject.changelog
-    dependencies {
-        required.project "fabric-api"
-        required.project "yacl"
-        optional.project "modmenu"
+        supportedVersions.forEach {
+            minecraftVersions.add(it)
+        }
+
+        javaVersions.add(javaVersion)
+        clientRequired = true
+
+        requires("fabric-api", "yacl")
+        optional("modmenu")
     }
 }
 
