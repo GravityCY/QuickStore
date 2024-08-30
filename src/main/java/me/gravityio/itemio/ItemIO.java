@@ -67,7 +67,7 @@ public class ItemIO implements ClientModInitializer {
     private static final int INCREMENT_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_SHIFT;
     private static final int RESTOCK_MODIFIER_KEY = GLFW.GLFW_KEY_LEFT_CONTROL;
 
-    private static final int TIMEOUT = 500;
+    private static final int TIMEOUT = 2000;
 
     public static boolean IS_DEV;
     public static ItemIO INSTANCE;
