@@ -1,0 +1,2 @@
+- Increased the timeout limit when waiting for the server to respond (500ms -> 2000ms)
+- Updated to 1.21.4

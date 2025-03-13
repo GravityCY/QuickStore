@@ -42,12 +42,19 @@ public class RenderHelper {
 
     public static void renderItem(Minecraft client, MultiBufferSource.BufferSource vc, PoseStack matrices, Level world, ItemStack stack, float x, float y, float z) {
         if (!stack.isEmpty()) {
+            //? >=1.21.4 {
+            /*matrices.pushPose();
+            matrices.translate(x, y, z);
+            client.getItemRenderer().renderStatic(stack, ItemDisplayContext.GUI, 15728880, OverlayTexture.NO_OVERLAY, matrices, vc, null, 0);
+            matrices.popPose();
+            *///?} else {
             BakedModel bakedModel = client.getItemRenderer().getModel(stack, world, null, 0);
             matrices.pushPose();
             matrices.translate(x, y, z);
             client.getItemRenderer()
                     .render(stack, ItemDisplayContext.GUI, false, matrices, vc, 15728880, OverlayTexture.NO_OVERLAY, bakedModel);
             matrices.popPose();
+            //?}
         }
     }
 
