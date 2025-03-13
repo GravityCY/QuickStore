@@ -102,7 +102,9 @@ public class Helper {
      * Gets the inventory the player is looking at
      */
     public static BlockHitResult getLookingAtInventory(Minecraft client) {
-        //? if >=1.21 {
+        //? if >=1.21.2 {
+        /*var hit = Helper.raycast(client.cameraEntity, client.getDeltaTracker().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
+        *///?} elif >=1.21 {
         var hit = Helper.raycast(client.cameraEntity, client.getTimer().getGameTimeDeltaPartialTick(true), (float) client.player.blockInteractionRange());
         //?} elif >=1.20.5 {
         /*var hit = Helper.raycast(client.cameraEntity, client.getDeltaFrameTime(), (float) client.player.blockInteractionRange());

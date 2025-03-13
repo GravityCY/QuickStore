@@ -1,12 +1,115 @@
+plugins {
+    id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
+    id "me.gravityio.discord-webhook" version "0.0.3"
+}
+
 plugins.apply "dev.kikugie.stonecutter"
 stonecutter.active "1.21" /* [SC] DO NOT EDIT */
+
+Properties secrets = new Properties()
+rootProject.file("secrets.properties").withInputStream { secrets.load(it) }
+rootProject.ext.data = new LinkedHashMap<String, UploadData>()
+rootProject.ext.changelog = file("CHANGELOG.md").text
+
+List<String> allVersions = new ArrayList<>()
+String webhookUrl = secrets.get("discord_webhook").toString()
+
+stonecutter.versions.forEach {
+    allVersions.add(it.project)
+    rootProject.ext.data.put(it.project, new UploadData())
+}
+
+// and this
+replacement {
+    fileName = "README.md"
+    types = ["modrinth", "curseforge"]
+    values = [
+            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
+            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
+            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
+    ]
+}
 
 stonecutter.registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) { 
     setGroup "project"
     ofTask "build"
 }
 
-stonecutter.registerChiseled tasks.register("chiseledPublish", stonecutter.chiseled) {
+stonecutter.registerChiseled tasks.register("chiseledPublish") {
     setGroup "project"
-    ofTask "publishMods"
+    chiseledDepends(it, "publishMod", allVersions)
+    doLast {
+        onPublish(webhookUrl, allVersions)
+    }
+}
+
+tasks.register("activeBuild") {
+    group = "project"
+    activeDepend(it, "build")
+}
+
+tasks.register("activePublish") {
+    group = "project"
+    activeDepend(it, "publishMod")
+
+    doLast {
+        onPublish(webhookUrl, stonecutter.current.project)
+    }
+}
+
+def onPublish(String webhookUrl, List<String> toPublishList) {
+    onPublish(webhookUrl, toPublishList.toArray(String[]::new))
+}
+
+def onPublish(String webhookUrl, String... toPublishArray) {
+    def message = ""
+
+    def modName = rootProject.mod_name
+    def modVersion = rootProject.mod_version
+
+    def modSources = rootProject.mod_sources
+
+    def mdSlug = rootProject.modrinth_id
+    def cfSlug = rootProject.curseforge_slug
+
+    def issueChannel = "https://discord.com/channels/1112046604183162961/1247877233947971686"
+    def mentionId = "1277913016725405768"
+
+    toPublishArray.each {
+        UploadData upData = rootProject.ext.data.get(it)
+        message += "# $modName $modVersion+${it} Update ([Modrinth](<https://modrinth.com/mod/${mdSlug}/version/${upData.modrinthFileId}>) | [Curseforge](<https://curseforge.com/minecraft/mc-mods/${cfSlug}/files/${upData.curseFileId}>))\n"
+    }
+
+    message += "$rootProject.ext.changelog\n\n"
+
+//        message += "**To view the details of the changelog visit the [Modrinth changelog page](<https://modrinth.com/mod/${mdSlug}/changelog>) or the [CurseForge files page](<https://curseforge.com/minecraft/mc-mods/${cfSlug}/files/${rootProject.ext.data.firstEntry().value.curseFileId}>)**\n"
+    message += "**As always report any issues on my [GitHub](<$modSources>) or in ${issueChannel}**\n"
+    message += "<@&${mentionId}>"
+
+    rootProject.file("temp").mkdir()
+    rootProject.file("temp/discord.md").write(message)
+
+    def config = discord_webhook.prepare(webhookUrl)
+    config.content(message)
+    discord_webhook.send()
+}
+
+def activeDepend(Task task, String subtaskName) {
+    task.dependsOn(project(stonecutter.current.project).tasks.named(subtaskName).get())
+}
+
+def chiseledDepends(Task task, String subtaskName, List<String> versions) {
+    chiseledDepends(task, subtaskName, versions.toArray(String[]::new))
+}
+
+def chiseledDepends(Task task, String subtaskName, String... versions) {
+    def setupTask = tasks.named("chiseledStonecutter").get()
+    task.dependsOn(setupTask)
+
+    versions.each {
+        def proj = rootProject.project(it)
+        def subtask = proj.tasks.named(subtaskName).get()
+        task.dependsOn(subtask)
+        subtask.mustRunAfter(setupTask)
+    }
 }

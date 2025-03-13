@@ -46,6 +46,11 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//? if >=1.21.2 {
+/*import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.client.ScrollWheelHandler;
+*///?}
+
 import java.util.*;
 
 public class ItemIO implements ClientModInitializer {
@@ -451,7 +456,13 @@ public class ItemIO implements ClientModInitializer {
 
             if (this.doScroll()) {
                 DEBUG("Scrolling hotbar");
+                //? if >=1.21.2 {
+                /*var inv =client.player.getInventory();
+                var index = ScrollWheelHandler.getNextScrollWheelSelection(-1, inv.selected, Inventory.getSelectionSize());
+                inv.setSelectedHotbarSlot(index);
+                *///?} else {
                 client.player.getInventory().swapPaint(-1);
+                //?}
             }
 
             if (this.doRestock() && client.player.getMainHandItem().isEmpty()) {

@@ -15,7 +15,11 @@ public record BlockRec(BlockPos pos, Direction side) {
     public static BlockRec of(Level world, Player player, BlockPos pos, Direction side) {
         if (!world.getBlockState(pos.relative(side)).isAir()) {
             BlockPos diff = player.blockPosition().subtract(pos);
+            //? if >=1.21.2 {
+            /*side = Direction.getNearest(diff.getX(), diff.getY(), diff.getZ(), player.getDirection());
+            *///?} else {
             side = Direction.getNearest(diff.getX(), diff.getY(), diff.getZ());
+            //?}
         }
         return new BlockRec(pos, side);
     }

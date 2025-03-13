@@ -1,3 +1,4 @@
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
 import groovy.json.JsonSlurper
 
 import java.net.http.HttpClient
@@ -5,10 +6,9 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 plugins {
-    id "fabric-loom" version "1.7-SNAPSHOT"
-    id "me.gravityio.replacementplugin" version "0.0.7" // my local experimental plugin, just delete if you fork
-    id "me.modmuss50.mod-publish-plugin" version "0.6.3"
-//    id "dev.kikugie.j52j" version "1.0.2"
+    id "fabric-loom" version "1.10-SNAPSHOT"
+    id "com.modrinth.minotaur" version "2.+"
+    id 'net.darkhax.curseforgegradle' version '1.1.23'
 }
 
 version = "${rootProject.mod_version}+${project.name}"
@@ -28,6 +28,21 @@ loom {
         runDir "../../run" // Use a shared run folder and just create separate worlds
     }
 }
+
+if (project.name != "1.21.2") {
+    configurations.configureEach {
+        resolutionStrategy {
+            force "com.twelvemonkeys.common:common-io:3.10.0"
+            force "com.twelvemonkeys.common:common-lang:3.10.0"
+            force "com.twelvemonkeys.common:common-image:3.10.0"
+
+            force "com.twelvemonkeys.imageio:imageio-metadata:3.10.0"
+            force "com.twelvemonkeys.imageio:imageio-webp:3.10.0"
+            force "com.twelvemonkeys.imageio:imageio-core:3.10.0"
+        }
+    }
+}
+
 
 repositories {
     exclusiveContent {
@@ -50,9 +65,6 @@ repositories {
         url = "https://maven.terraformersmc.com/"
     }
     maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots/"
-    }
-    maven {
         name = 'ParchmentMC'
         url = 'https://maven.parchmentmc.org'
     }
@@ -68,24 +80,24 @@ project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${root
 project.dependencies.add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
 dependencies {
-    if (project.name == "1.20" || project.name == "1.20.2") {
-        modImplementation "dev.isxander.yacl:yet-another-config-lib-fabric:${project.yacl_version}"
+    /*if (project.name == "1.21.2") {
+        modImplementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
+    } else*/ if (project.name == "1.20" || project.name == "1.20.2") {
+        modImplementation("dev.isxander.yacl:yet-another-config-lib-fabric:${project.yacl_version}") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
     } else {
-        modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric"
+        modImplementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
     }
-    modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}") {
+        exclude group: "net.fabricmc.fabric-api"
+    }
 //    modCompileOnly "maven.modrinth:blur-fabric:${blur_version}"
 //    modImplementation "maven.modrinth:iris:1.7.0+1.20.6"
-}
-
-replacement {
-    fileName = "README.md"
-    types = ["modrinth", "curseforge"]
-    values = [
-            "fabric_api_url": ["https://modrinth.com/mod/fabric-api", "https://curseforge.com/minecraft/mc-mods/fabric-api"],
-            "yacl_url": ["https://modrinth.com/mod/yacl", "https://curseforge.com/minecraft/mc-mods/yacl"],
-            "modmenu_url": ["https://modrinth.com/mod/modmenu", "https://curseforge.com/minecraft/mc-mods/modmenu"]
-    ]
 }
 
 tasks.register("depVersions") {
@@ -112,39 +124,54 @@ tasks.register("depVersions") {
     }
 }
 
-publishMods {
-    file = remapJar.archiveFile
-    modLoaders.add("fabric")
-    changelog = rootProject.changelog
-    type = STABLE
-    displayName = "$rootProject.mod_name $project.version"
+tasks.register('publishMod') {
+    group = "publishing"
 
-    modrinth {
-        accessToken = providers.environmentVariable("MODRINTH_UPLOAD")
-        projectId = rootProject.modrinth_id
+    dependsOn "publishCurseForge"
+    dependsOn "modrinth"
+}
 
-        supportedVersions.forEach {
-            minecraftVersions.add(it)
-        }
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
+    disableVersionDetection()
 
-        requires("fabric-api", "yacl")
-        optional("modmenu")
+    group = "publishing"
+    apiToken = System.getenv("CURSEFORGE_UPLOAD");
+
+    def mainFile = upload(rootProject.curseforge_id, remapJar)
+    mainFile.changelog = rootProject.changelog
+    supportedVersions.forEach {
+        mainFile.addGameVersion(it)
     }
+    mainFile.addJavaVersion("Java ${javaVersionNum}")
+    mainFile.displayName = "${rootProject.mod_name} ${project.version}"
+    mainFile.addModLoader("Fabric")
+    mainFile.releaseType = "release"
+    mainFile.addRequirement("fabric-api", "yacl")
+    mainFile.addOptional("modmenu")
+    doLast {
+        rootProject.ext.data.get(stonecutter.current.project).curseFileId = mainFile.curseFileId
+    }
+}
 
-    curseforge {
-        accessToken = providers.environmentVariable("CURSEFORGE_UPLOAD")
-        projectId = rootProject.curseforge_id
-        projectSlug = "itemio"
+modrinth {
+    token = System.getenv("MODRINTH_UPLOAD")
+    projectId = rootProject.modrinth_id
+    versionName = "${rootProject.mod_name} ${project.version}"
+    versionNumber = project.version
+    uploadFile = remapJar
+    gameVersions = supportedVersions
+    loaders = ["fabric"]
+    delegate.changelog = rootProject.changelog
+    dependencies {
+        required.project "fabric-api"
+        required.project "yacl"
+        optional.project "modmenu"
+    }
+}
 
-        supportedVersions.forEach {
-            minecraftVersions.add(it)
-        }
-
-        javaVersions.add(javaVersion)
-        clientRequired = true
-
-        requires("fabric-api", "yacl")
-        optional("modmenu")
+tasks.named("modrinth").configure {
+    doLast {
+        rootProject.ext.data.get(stonecutter.current.project).modrinthFileId = it.uploadInfo.id
     }
 }
 
@@ -152,7 +179,7 @@ processResources  {
     def modProperties = [
             "mod_id": rootProject.mod_id,
             "mod_name": rootProject.mod_name,
-            "mod_version": rootProject.mod_version,
+            "mod_version": project.version,
             "mod_description": rootProject.mod_description,
             "mod_author": rootProject.mod_author,
             "mod_sources": rootProject.mod_sources,
